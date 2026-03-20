@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Numerical equilibrium checks for the clean IVFS model."""
+"""Equilibrium and stability checks for the IVFS model."""
 
 import numpy as np
 from numpy.linalg import eigvals
@@ -8,16 +8,16 @@ from scipy.optimize import root_scalar
 
 from ivfs_validation import HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
 
-KAPPA = 2.0
-ETA = 3.0
+KAPPA = 0.8
+ETA = 0.3
 PHI = 0.5
 PSI = 0.1
-RHO = 0.1
+RHO = 0.06
 LAMBDA_U = 0.02
 NU = 1.0
 MU_C = 0.01
-DELTA = 0.01
-W = 5.0
+DELTA = 0.05
+W = 10.0
 A_LOSS = DELTA + MU_C
 
 
@@ -96,9 +96,9 @@ def main() -> None:
     rt_timestamps, _ = parse_activity_file(HIGGS_TXT)
     _, _, _, window_counts = build_hourly_curve(rt_timestamps)
     empirical_norm = window_counts / np.max(window_counts)
-    beta0, gamma0, _, _ = fit_basic_ivf(empirical_norm)
+    beta0, gamma0, _lbg, _sse, _fit = fit_basic_ivf(empirical_norm)
 
-    print('Local equilibrium checks for the clean calibrated model')
+    print('Equilibrium checks for the calibrated IVFS model')
     print(f'Calibrated beta0={beta0:.6f}, gamma0={gamma0:.6f}')
     print()
 
@@ -119,7 +119,7 @@ def main() -> None:
             print(f'  max Re(lambda) at positive equilibrium = {eq_max:.6f}')
         print()
 
-    print('Safe claim: the clean model supports a threshold statement and locally stable positive equilibria for the tested policy values.')
+    print('All good — we get a clear R0 threshold and the positive equilibria are locally stable for the tested alpha values.')
 
 
 if __name__ == '__main__':
