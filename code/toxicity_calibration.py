@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Look for a Jigsaw-style or Ruddit-style toxicity dataset and print a quick schema summary."""
+"""check if we have a jigsaw/ruddit toxicity csv and print some stats"""
 
 import csv
 import sys
@@ -76,8 +76,8 @@ def summarize_ruddit(path: Path) -> dict[str, float]:
 def main() -> None:
     files = candidate_files()
     if not files:
-        print('No local toxicity dataset found.')
-        print(f'If you want direct toxicity calibration, drop a Jigsaw or Ruddit file into {TOXICITY_DIR}.')
+        print('no toxicity dataset found')
+        print(f'drop a jigsaw or ruddit csv into {TOXICITY_DIR} if you want to run this')
         return
 
     selected = files[0]
@@ -86,29 +86,33 @@ def main() -> None:
         header = next(reader)
     header_set = set(header)
 
-    print(f'Detected dataset: {selected.name}')
+    print(f'found: {selected.name}')
     if all(col in header_set for col in JIGSAW_COLUMNS):
         print('Schema: Jigsaw-style toxicity labels')
         summary = summarize_jigsaw(selected)
         for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
-        # Derive empirical phi/psi constraint.
+        # figure out what phi/psi should be from the data
         mean_tau = summary['toxic_any_rate']
         print(f'\n  Empirical tau proxy (mean toxicity rate): {mean_tau:.6f}')
+        print('  Note: Jigsaw is an external toxicity reference, not the main Higgs calibration.')
         print('  Model constraint: phi/psi = mean_tau / V*(alpha=0.5)')
         try:
-            from ivfs_validation import (HIGGS_TXT, build_hourly_curve, ensure_dataset,
+            from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, PHI, PSI, build_hourly_curve, ensure_dataset,
                                           fit_basic_ivf, parse_activity_file, run_scenarios)
             ensure_dataset()
-            rt, _ = parse_activity_file(HIGGS_TXT)
-            _, _, _, wc = build_hourly_curve(rt)
+            rt, *_ = parse_activity_file(HIGGS_TXT)
+            cal = build_hourly_curve(rt)
+            wc = cal['rt_window']
             en = wc / np.max(wc)
-            b0, g0, *_ = fit_basic_ivf(en)
+            fit_window_hours = min(FIT_WINDOW_HOURS, len(en))
+            b0, g0, *_ = fit_basic_ivf(en[:fit_window_hours], wc[:fit_window_hours])
             _, sr = run_scenarios(b0, g0)
             v_star = sr['Moderate (alpha=0.5)']['V_star']
             ratio = mean_tau / v_star if v_star > 0 else float('inf')
             print(f'  V* at alpha=0.5: {v_star:.6f}')
-            print(f'  => phi/psi = {ratio:.4f}  (current: {0.5 / 0.1:.1f})')
+            print(f'  => implied phi/psi = {ratio:.4f}  (model uses PHI={PHI}, PSI={PSI}, ratio={PHI/PSI:.4f})')
+            print('  Jigsaw is an external reference distribution, not the main Higgs calibration source.')
         except Exception as exc:
             print(f'  (could not run IVFS model: {exc})')
     elif RUDDIT_COLUMN in header_set:

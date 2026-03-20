@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Equilibrium and stability checks for the IVFS model."""
+"""equilibrium + stability stuff for the IVFS model"""
 
 import sys
 from pathlib import Path
@@ -11,7 +11,7 @@ import numpy as np
 from numpy.linalg import eigvals
 from scipy.optimize import root_scalar
 
-from ivfs_validation import (HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf,
+from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf,
                               parse_activity_file,
                               KAPPA, ETA, PHI, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
@@ -81,7 +81,7 @@ def jacobian(state: np.ndarray, alpha: float, beta0: float, gamma0: float) -> np
     jac[2, 2] = -MU_C
     jac[2, 4] = dgamma_dtau * v_star
 
-    # S row: dS = DELTA*I - MU_C*S
+    # S row
     jac[3, 0] = DELTA
     jac[3, 3] = -MU_C
 
@@ -95,12 +95,17 @@ def jacobian(state: np.ndarray, alpha: float, beta0: float, gamma0: float) -> np
 
 def main() -> None:
     ensure_dataset()
-    rt_timestamps, _ = parse_activity_file(HIGGS_TXT)
-    _, _, _, window_counts = build_hourly_curve(rt_timestamps)
+    rt_timestamps, *_ = parse_activity_file(HIGGS_TXT)
+    cal = build_hourly_curve(rt_timestamps)
+    window_counts = cal['rt_window']
     empirical_norm = window_counts / np.max(window_counts)
-    beta0, gamma0, _lbg, _sse, _fit = fit_basic_ivf(empirical_norm, window_counts)
+    fit_window_hours = min(FIT_WINDOW_HOURS, len(empirical_norm))
+    beta0, gamma0, _lam0, _lam_decay, _v0, _sse, _fit = fit_basic_ivf(
+        empirical_norm[:fit_window_hours],
+        window_counts[:fit_window_hours],
+    )
 
-    print('Equilibrium checks for the calibrated IVFS model')
+    print('Equilibrium checks for the IVFS model (Higgs-calibrated beta0/gamma0, scenario-driven toxicity)')
     print(f'Calibrated beta0={beta0:.6f}, gamma0={gamma0:.6f}')
     print()
 
@@ -121,7 +126,8 @@ def main() -> None:
             print(f'  max Re(lambda) at positive equilibrium = {eq_max:.6f}')
         print()
 
-    print('All good — we get a clear R0 threshold and the positive equilibria are locally stable for the tested alpha values.')
+    print('R0 threshold is clear and positive equilibria are stable.')
+    print('Note: tau values here are scenario-driven (assumed phi/psi), not empirically calibrated.')
 
 
 if __name__ == '__main__':
