@@ -10,3 +10,4 @@ __pycache__/
 *.out
 code/.mplconfig/
 code/.cache/
+/scratch/
