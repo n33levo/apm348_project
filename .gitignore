@@ -10,4 +10,7 @@ __pycache__/
 *.out
 code/.mplconfig/
 code/.cache/
-/scratch/
+/scratch/# large data files -- auto-downloaded by ensure_dataset() or too big for git
+data/higgs-activity_time.txt
+data/higgs-activity_time.txt.gz
+data/toxicity/

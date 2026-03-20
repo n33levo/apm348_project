@@ -2,22 +2,19 @@ from __future__ import annotations
 
 """Equilibrium and stability checks for the IVFS model."""
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import numpy as np
 from numpy.linalg import eigvals
 from scipy.optimize import root_scalar
 
-from ivfs_validation import HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
+from ivfs_validation import (HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf,
+                              parse_activity_file,
+                              KAPPA, ETA, PHI, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
-KAPPA = 0.8
-ETA = 0.3
-PHI = 0.5
-PSI = 0.1
-RHO = 0.06
-LAMBDA_U = 0.02
-NU = 1.0
-MU_C = 0.01
-DELTA = 0.05
-W = 10.0
 A_LOSS = DELTA + MU_C
 
 
@@ -58,36 +55,41 @@ def positive_equilibrium(alpha: float, beta0: float, gamma0: float) -> np.ndarra
     gamma_eff = gamma0 * (1.0 + ETA * tau_star)
     i_star = (gamma_eff + MU_C) / beta_eff
     f_star = gamma_eff * v_star / MU_C
-    return np.array([i_star, v_star, f_star, tau_star, u_star], dtype=float)
+    s_star = DELTA * i_star / MU_C
+    return np.array([i_star, v_star, f_star, s_star, tau_star, u_star], dtype=float)
 
 
 def jacobian(state: np.ndarray, alpha: float, beta0: float, gamma0: float) -> np.ndarray:
-    i_star, v_star, f_star, tau_star, u_star = state
+    i_star, v_star, f_star, s_star, tau_star, u_star = state
     beta_eff = alpha * beta0 * (1.0 + KAPPA * tau_star)
     gamma_eff = gamma0 * (1.0 + ETA * tau_star)
     dbeta_dtau = alpha * beta0 * KAPPA
     dgamma_dtau = gamma0 * ETA
     dinflow_du = RHO / (1.0 + u_star) ** 2
 
-    jac = np.zeros((5, 5))
+    jac = np.zeros((6, 6))
     jac[0, 0] = -beta_eff * v_star - A_LOSS
     jac[0, 1] = -beta_eff * i_star
-    jac[0, 3] = -dbeta_dtau * i_star * v_star
-    jac[0, 4] = dinflow_du
+    jac[0, 4] = -dbeta_dtau * i_star * v_star
+    jac[0, 5] = dinflow_du
 
     jac[1, 0] = beta_eff * v_star
     jac[1, 1] = beta_eff * i_star - gamma_eff - MU_C
-    jac[1, 3] = dbeta_dtau * i_star * v_star - dgamma_dtau * v_star
+    jac[1, 4] = dbeta_dtau * i_star * v_star - dgamma_dtau * v_star
 
     jac[2, 1] = gamma_eff
     jac[2, 2] = -MU_C
-    jac[2, 3] = dgamma_dtau * v_star
+    jac[2, 4] = dgamma_dtau * v_star
 
-    jac[3, 1] = PHI
-    jac[3, 3] = -PSI
+    # S row: dS = DELTA*I - MU_C*S
+    jac[3, 0] = DELTA
+    jac[3, 3] = -MU_C
 
-    jac[4, 3] = -LAMBDA_U * W * u_star
-    jac[4, 4] = -LAMBDA_U * (1.0 + W * tau_star)
+    jac[4, 1] = PHI
+    jac[4, 4] = -PSI
+
+    jac[5, 4] = -LAMBDA_U * W * u_star
+    jac[5, 5] = -LAMBDA_U * (1.0 + W * tau_star)
     return jac
 
 
@@ -96,7 +98,7 @@ def main() -> None:
     rt_timestamps, _ = parse_activity_file(HIGGS_TXT)
     _, _, _, window_counts = build_hourly_curve(rt_timestamps)
     empirical_norm = window_counts / np.max(window_counts)
-    beta0, gamma0, _lbg, _sse, _fit = fit_basic_ivf(empirical_norm)
+    beta0, gamma0, _lbg, _sse, _fit = fit_basic_ivf(empirical_norm, window_counts)
 
     print('Equilibrium checks for the calibrated IVFS model')
     print(f'Calibrated beta0={beta0:.6f}, gamma0={gamma0:.6f}')
@@ -104,7 +106,7 @@ def main() -> None:
 
     for alpha in (0.2, 0.5, 0.9):
         i_dfe, u_dfe, r0 = dfe(alpha, beta0, gamma0)
-        dfe_state = np.array([i_dfe, 0.0, 0.0, 0.0, u_dfe], dtype=float)
+        dfe_state = np.array([i_dfe, 0.0, 0.0, 0.0, 0.0, u_dfe], dtype=float)
         dfe_max = float(np.max(eigvals(jacobian(dfe_state, alpha, beta0, gamma0)).real))
         eq_state = positive_equilibrium(alpha, beta0, gamma0)
 
@@ -115,7 +117,7 @@ def main() -> None:
             print('  no positive equilibrium found')
         else:
             eq_max = float(np.max(eigvals(jacobian(eq_state, alpha, beta0, gamma0)).real))
-            print(f'  tau*={eq_state[3]:.6f}, V*={eq_state[1]:.6f}, U*={eq_state[4]:.6f}')
+            print(f'  tau*={eq_state[4]:.6f}, V*={eq_state[1]:.6f}, U*={eq_state[5]:.6f}')
             print(f'  max Re(lambda) at positive equilibrium = {eq_max:.6f}')
         print()
 

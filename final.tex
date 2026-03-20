@@ -45,15 +45,21 @@ Natural decay $\mu_c$ represents loss of visibility/attention (content leaving t
 \section*{4. Planned Analysis and Simulations}
 \begin{itemize}[leftmargin=1.3em]
 \item \textbf{Calibration data:} SNAP Higgs activity stream \cite{snap}. Verified counts: 563,069 total events, 354,930 retweets, peak at hour 78 with 30,602 RTs.
-\item \textbf{Parameter fitting:} fit baseline IVF model to a 100-hour normalized retweet window (scale-invariant) using Nelder--Mead. Only $\beta_0,\gamma_0$ are data-fitted; remaining parameters are scenario assumptions.
+\item \textbf{Parameter fitting:} fit baseline IVF model to a 100-hour normalized retweet window (scale-invariant) using Nelder--Mead. Only $\beta_0,\gamma_0,\lambda_{\mathrm{bg}},V_0$ are data-fitted; remaining parameters are scenario assumptions. The toxicity coupling $\phi$ is calibrated from the Jigsaw toxicity dataset: $\phi = \hat{\tau}_{\text{empirical}} \cdot \psi / V^*(\alpha\!=\!0.5) \approx 0.056$.
 \item \textbf{Analytical work:} derive equilibria, a disease-free threshold analogue $\mathcal{R}_0$, and local Jacobian stability conditions.
 \item \textbf{Numerical scenarios:} engagement-first ($\alpha=0.9$), moderate ($\alpha=0.5$), health-first ($\alpha=0.2$), with long horizons (e.g., $t=1000$) for steady values of $V^*,\tau^*,U^*$ and $E=\alpha V^*U^*$.
 \item \textbf{Continuation sweep:} compute long-run $\tau^*(\alpha)$ for $\alpha\in[0.05,1.0]$ and report as continuation evidence (not a formal bifurcation claim unless stability checks support it).
 \item \textbf{Sensitivity:} vary $\kappa,\eta,\phi,\psi,\lambda_u$ to quantify robustness.
+\item \textbf{Uncertainty quantification:} parametric Poisson bootstrap ($B=500$) gives 95\% CIs for $\beta_0\in[1.463,1.487]$, $\gamma_0\in[0.152,0.155]$, and $\alpha(\mathcal{R}_0\!=\!1)\in[0.111,0.114]$. Profile likelihood surfaces confirm that both $\beta_0$ and $\gamma_0$ have well-defined minima (no flat ridges), supporting practical identifiability.
 \end{itemize}
 
 \section*{5. Expected Results and Conclusion Plan}
-We expect higher amplification to improve short-run virality but worsen long-run toxicity and user retention. The conclusion will summarize equilibrium/stability findings, compare policy scenarios, discuss implications for platform moderation and ranking policy, and state limitations (homogeneous mixing, deterministic dynamics, single-index toxicity) with extensions to network-aware/stochastic models.
+We expect higher amplification to improve short-run virality but worsen long-run toxicity and user retention. The conclusion will summarize equilibrium/stability findings, compare policy scenarios, discuss implications for platform moderation and ranking policy, and state limitations.
+
+\paragraph{Limitations.}
+Homogeneous mixing, deterministic dynamics, and single-index toxicity are the main structural simplifications.
+The fitted $\beta_0$ and initial viral seed $V_0$ are jointly estimated from a single cascade; however, parametric bootstrap CIs are narrow (width $<2\%$ of the point estimate) and profile likelihood surfaces show well-defined minima for both $\beta_0$ and $\gamma_0$, lending practical identifiability support.
+Extensions to network-aware and stochastic models are natural next steps.
 
 \begingroup
 \footnotesize
@@ -104,7 +110,10 @@ E.~Addai, N.~Agarwal, and N.~Yousefi.
 Modeling and simulation of interventions' effect on the spread of toxicity in social media.
 \textit{Online Social Networks and Media}, 46:100309, 2025.
 
-Jing, Yi, et al. “Improved SIR Advertising Spreading Model and Its Effectiveness in Social Network.” Procedia Computer Science, vol. 129, 1 Jan. 2018, pp. 215–218, www.sciencedirect.com/science/article/pii/S1877050918302679, https://doi.org/10.1016/j.procs.2018.03.044.
+\bibitem{jing2018}
+Y.~Jing, H.~Wang, and Z.~Zhang.
+Improved SIR advertising spreading model and its effectiveness in social network.
+\textit{Procedia Computer Science}, 129:215--218, 2018.
 
 \end{thebibliography}
 \endgroup

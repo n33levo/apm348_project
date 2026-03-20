@@ -3,7 +3,10 @@ from __future__ import annotations
 """Look for a Jigsaw-style or Ruddit-style toxicity dataset and print a quick schema summary."""
 
 import csv
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
 
@@ -86,8 +89,28 @@ def main() -> None:
     print(f'Detected dataset: {selected.name}')
     if all(col in header_set for col in JIGSAW_COLUMNS):
         print('Schema: Jigsaw-style toxicity labels')
-        for key, value in summarize_jigsaw(selected).items():
+        summary = summarize_jigsaw(selected)
+        for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
+        # Derive empirical phi/psi constraint.
+        mean_tau = summary['toxic_any_rate']
+        print(f'\n  Empirical tau proxy (mean toxicity rate): {mean_tau:.6f}')
+        print('  Model constraint: phi/psi = mean_tau / V*(alpha=0.5)')
+        try:
+            from ivfs_validation import (HIGGS_TXT, build_hourly_curve, ensure_dataset,
+                                          fit_basic_ivf, parse_activity_file, run_scenarios)
+            ensure_dataset()
+            rt, _ = parse_activity_file(HIGGS_TXT)
+            _, _, _, wc = build_hourly_curve(rt)
+            en = wc / np.max(wc)
+            b0, g0, *_ = fit_basic_ivf(en)
+            _, sr = run_scenarios(b0, g0)
+            v_star = sr['Moderate (alpha=0.5)']['V_star']
+            ratio = mean_tau / v_star if v_star > 0 else float('inf')
+            print(f'  V* at alpha=0.5: {v_star:.6f}')
+            print(f'  => phi/psi = {ratio:.4f}  (current: {0.5 / 0.1:.1f})')
+        except Exception as exc:
+            print(f'  (could not run IVFS model: {exc})')
     elif RUDDIT_COLUMN in header_set:
         print('Schema: Ruddit-style offensiveness scores')
         for key, value in summarize_ruddit(selected).items():
