@@ -15,12 +15,12 @@ HIGGS_GZ = DATA_DIR / 'higgs-activity_time.txt.gz'
 HIGGS_TXT = DATA_DIR / 'higgs-activity_time.txt'
 HIGGS_URL = 'http://snap.stanford.edu/data/higgs-activity_time.txt.gz'
 
-# Matplotlib loves writing cache files somewhere. I would rather keep that noise inside the repo.
+# matplotlib dumps cache files everywhere so i just shove them in the repo
 os.environ.setdefault('MPLCONFIGDIR', str(MPLCONFIG_DIR))
 os.environ.setdefault('XDG_CACHE_HOME', str(XDG_CACHE_HOME))
 
 
 def ensure_layout() -> None:
-    """Create the folders this repo expects to exist."""
+    """make sure all the folders we need actually exist"""
     for path in (DATA_DIR, ASSETS_DIR, TOXICITY_DIR, MPLCONFIG_DIR, XDG_CACHE_HOME):
         path.mkdir(parents=True, exist_ok=True)
