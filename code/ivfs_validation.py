@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 
 FIGURE_PATH = ASSETS_DIR / 'apm348_results.png'
 DIAG_FIGURE_PATH = ASSETS_DIR / 'apm348_calibration_diagnostics.png'
+PHI_SENS_FIGURE_PATH = ASSETS_DIR / 'phi_sensitivity.png'
 
 # --- model params (shared across files) ---
 KAPPA = 0.8
@@ -55,12 +56,16 @@ def ensure_dataset() -> None:
     """download + unzip the higgs data if we don't have it yet"""
     ensure_layout()
 
+    # if the extracted activity file is already here, that's enough for all current scripts
+    if HIGGS_TXT.exists():
+        return
+
     if not HIGGS_GZ.exists():
         print('[data] dont have the higgs gz, downloading from SNAP...')
         urllib.request.urlretrieve(HIGGS_URL, HIGGS_GZ)
         print(f'[data] saved to {HIGGS_GZ}')
 
-    if not HIGGS_TXT.exists() or HIGGS_TXT.stat().st_mtime < HIGGS_GZ.stat().st_mtime:
+    if not HIGGS_TXT.exists() or (HIGGS_GZ.exists() and HIGGS_TXT.stat().st_mtime < HIGGS_GZ.stat().st_mtime):
         print('[data] unzipping higgs activity file...')
         with gzip.open(HIGGS_GZ, 'rt') as src, HIGGS_TXT.open('w') as dst:
             shutil.copyfileobj(src, dst)
@@ -573,6 +578,97 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
     return tau_base, u_base, rows
 
 
+def run_phi_sensitivity(beta0: float,
+                        gamma0: float,
+                        phi_grid: np.ndarray,
+                        scenario_alphas: dict[str, float] | None = None):
+    """sweep PHI while holding PSI fixed to show how robust the policy ordering is"""
+    if scenario_alphas is None:
+        scenario_alphas = {
+            'Engagement-First (alpha=0.9)': 0.9,
+            'Moderate (alpha=0.5)': 0.5,
+            'Health-First (alpha=0.2)': 0.2,
+        }
+
+    a_loss = DELTA + MU_C
+    u_dfe = NU / LAMBDA_U
+    i_dfe = RHO * u_dfe / ((1.0 + u_dfe) * a_loss)
+    y0 = [i_dfe, 0.01, 0.0, 0.0, 0.0, u_dfe]
+    t_grid = np.linspace(0, 2000, 10001)
+
+    out: dict[str, dict[str, np.ndarray | float]] = {}
+    for label, alpha in scenario_alphas.items():
+        tau_vals: list[float] = []
+        u_vals: list[float] = []
+        v_vals: list[float] = []
+        e_vals: list[float] = []
+        for phi_val in phi_grid:
+            def ode_phi(y, t, a, b, g, _phi=float(phi_val)):
+                return _ivfs_rhs(y, t, a, b, g,
+                                 KAPPA, ETA, _phi, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
+
+            sol = odeint(ode_phi, y0, t_grid, args=(alpha, beta0, gamma0), mxstep=20000)
+            v_eq = max(0.0, float(sol[-1, 1]))
+            tau_eq = max(0.0, float(sol[-1, 4]))
+            u_eq = float(sol[-1, 5])
+            tau_vals.append(tau_eq)
+            u_vals.append(u_eq)
+            v_vals.append(v_eq)
+            e_vals.append(float(alpha * v_eq * u_eq))
+        out[label] = {
+            'alpha': alpha,
+            'tau_star': np.array(tau_vals),
+            'U_star': np.array(u_vals),
+            'V_star': np.array(v_vals),
+            'E_star': np.array(e_vals),
+        }
+    return out
+
+
+def make_phi_sensitivity_figure(phi_grid: np.ndarray,
+                                phi_results: dict[str, dict[str, np.ndarray | float]],
+                                current_phi: float,
+                                external_phi: float | None = None,
+                                external_source: str | None = None) -> None:
+    """save a small robustness figure for the toxicity coupling PHI"""
+    plt.style.use('ggplot')
+    fig, axs = plt.subplots(1, 2, figsize=(12.5, 4.8))
+
+    colors = {
+        'Engagement-First (alpha=0.9)': '#C62828',
+        'Moderate (alpha=0.5)': '#1565C0',
+        'Health-First (alpha=0.2)': '#2E7D32',
+    }
+
+    for label, data in phi_results.items():
+        axs[0].plot(phi_grid, data['tau_star'], linewidth=2.1, color=colors[label], label=label)
+        axs[1].plot(phi_grid, data['U_star'], linewidth=2.1, color=colors[label], label=label)
+
+    for ax in axs:
+        ax.axvline(current_phi, color='black', linestyle='--', linewidth=1.2,
+                   label=f'Current PHI={current_phi:.3f}')
+        if external_phi is not None:
+            ext_label = f'External PHI≈{external_phi:.3f}'
+            if external_source:
+                ext_label = f'{external_source} PHI≈{external_phi:.3f}'
+            ax.axvline(external_phi, color='#6A1B9A', linestyle=':', linewidth=1.4, label=ext_label)
+        ax.set_xlabel('Toxicity coupling PHI')
+
+    axs[0].set_title('(a) Equilibrium Toxicity $\\tau^*$ vs PHI')
+    axs[0].set_ylabel('$\\tau^*$')
+    axs[0].set_ylim(bottom=0)
+    axs[0].legend(fontsize=8)
+
+    axs[1].set_title('(b) Equilibrium Users $U^*$ vs PHI')
+    axs[1].set_ylabel('$U^*$')
+    axs[1].legend(fontsize=8)
+
+    fig.suptitle('APM348 PHI Sensitivity (PSI fixed)', fontsize=13, fontweight='bold', y=1.02)
+    fig.tight_layout(pad=2)
+    fig.savefig(PHI_SENS_FIGURE_PATH, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+
 def find_W_for_interior_Emax(beta0: float, gamma0: float,
                               w_grid: np.ndarray | None = None):
     """scan W values to see if E* ever peaks at an interior alpha"""
@@ -786,6 +882,30 @@ def main() -> None:
     t_scenario, scenario_results = run_scenarios(beta0, gamma0)
     alphas, tau_star, v_star_cont, u_star_cont, alpha_r0 = run_continuation(beta0, gamma0)
 
+    external_tau_ref = None
+    external_source = None
+    try:
+        from toxicity_calibration import get_external_tau_reference
+        ext_ref = get_external_tau_reference()
+        if ext_ref is not None:
+            external_tau_ref = float(ext_ref['tau_reference'])
+            external_source = str(ext_ref['dataset'])
+    except Exception:
+        ext_ref = None
+
+    moderate_v_star = max(0.0, float(scenario_results['Moderate (alpha=0.5)']['V_star']))
+    external_phi = None
+    if external_tau_ref is not None and moderate_v_star > 1e-12:
+        external_phi = float(external_tau_ref * PSI / moderate_v_star)
+    phi_candidates = [PHI]
+    if external_phi is not None and np.isfinite(external_phi):
+        phi_candidates.append(external_phi)
+    phi_min = max(0.02, 0.5 * min(phi_candidates))
+    phi_max = min(0.25, 1.2 * max(phi_candidates))
+    phi_grid = np.linspace(phi_min, phi_max, 30)
+    phi_results = run_phi_sensitivity(beta0, gamma0, phi_grid)
+    make_phi_sensitivity_figure(phi_grid, phi_results, PHI, external_phi, external_source)
+
     # calibration diagnostics figure (2x2)
     make_calibration_figure(empirical_norm, fitted_norm, window_counts,
                             re_window, reply_proxy,
@@ -834,6 +954,23 @@ def main() -> None:
     print(f'R0=1 threshold alpha: {alpha_r0:.4f}')
     print(f'Saved calibration diagnostics: {DIAG_FIGURE_PATH}')
     print(f'Saved policy results: {FIGURE_PATH}')
+    print(f'Saved PHI sensitivity figure: {PHI_SENS_FIGURE_PATH}')
+
+    print()
+    print(f'PHI robustness check (PSI fixed at {PSI:.3f}):')
+    print(f'  Current model PHI: {PHI:.4f}')
+    if external_phi is not None and np.isfinite(external_phi):
+        source_label = external_source if external_source is not None else 'external reference'
+        print(f'  {source_label} implies PHI≈{external_phi:.4f}')
+    print(f"  Health-First tau* range over PHI grid: [{np.min(phi_results['Health-First (alpha=0.2)']['tau_star']):.4f}, {np.max(phi_results['Health-First (alpha=0.2)']['tau_star']):.4f}]")
+    print(f"  Moderate tau* range over PHI grid: [{np.min(phi_results['Moderate (alpha=0.5)']['tau_star']):.4f}, {np.max(phi_results['Moderate (alpha=0.5)']['tau_star']):.4f}]")
+    print(f"  Engagement-First tau* range over PHI grid: [{np.min(phi_results['Engagement-First (alpha=0.9)']['tau_star']):.4f}, {np.max(phi_results['Engagement-First (alpha=0.9)']['tau_star']):.4f}]")
+    tau_order_ok = bool(np.all(phi_results['Engagement-First (alpha=0.9)']['tau_star'] >= phi_results['Moderate (alpha=0.5)']['tau_star'] - 1e-10)
+                        and np.all(phi_results['Moderate (alpha=0.5)']['tau_star'] >= phi_results['Health-First (alpha=0.2)']['tau_star'] - 1e-10))
+    u_order_ok = bool(np.all(phi_results['Engagement-First (alpha=0.9)']['U_star'] <= phi_results['Moderate (alpha=0.5)']['U_star'] + 1e-10)
+                      and np.all(phi_results['Moderate (alpha=0.5)']['U_star'] <= phi_results['Health-First (alpha=0.2)']['U_star'] + 1e-10))
+    print(f'  tau* ordering preserved across PHI grid: {tau_order_ok}')
+    print(f'  U* ordering preserved across PHI grid: {u_order_ok}')
 
     # sensitivity analysis with normalized indices
     print()

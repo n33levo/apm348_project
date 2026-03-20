@@ -29,6 +29,27 @@ def delimiter_for(path: Path) -> str:
     return '\t' if path.suffix.lower() == '.tsv' else ','
 
 
+def get_external_tau_reference() -> dict[str, float | str] | None:
+    files = candidate_files()
+    if not files:
+        return None
+
+    selected = files[0]
+    with selected.open('r', newline='', encoding='utf-8') as handle:
+        reader = csv.reader(handle, delimiter=delimiter_for(selected))
+        header = next(reader)
+    header_set = set(header)
+
+    if all(col in header_set for col in JIGSAW_COLUMNS):
+        summary = summarize_jigsaw(selected)
+        return {
+            'dataset': selected.name,
+            'schema': 'jigsaw',
+            'tau_reference': float(summary['toxic_any_rate']),
+        }
+    return None
+
+
 def summarize_jigsaw(path: Path) -> dict[str, float]:
     total = 0
     toxic_any = 0
@@ -110,8 +131,10 @@ def main() -> None:
             _, sr = run_scenarios(b0, g0)
             v_star = sr['Moderate (alpha=0.5)']['V_star']
             ratio = mean_tau / v_star if v_star > 0 else float('inf')
+            implied_phi = ratio * PSI if np.isfinite(ratio) else float('inf')
             print(f'  V* at alpha=0.5: {v_star:.6f}')
             print(f'  => implied phi/psi = {ratio:.4f}  (model uses PHI={PHI}, PSI={PSI}, ratio={PHI/PSI:.4f})')
+            print(f'  => implied PHI with PSI fixed at {PSI:.3f}: {implied_phi:.4f}')
             print('  Jigsaw is an external reference distribution, not the main Higgs calibration source.')
         except Exception as exc:
             print(f'  (could not run IVFS model: {exc})')
