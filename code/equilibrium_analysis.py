@@ -105,7 +105,7 @@ def main() -> None:
         window_counts[:fit_window_hours],
     )
 
-    print('Equilibrium checks for the IVFS model (Higgs-calibrated beta0/gamma0, scenario-driven toxicity)')
+    print('Equilibrium checks for the IVFS model (Higgs-calibrated beta0/gamma0, scenario-driven tau block)')
     print(f'Calibrated beta0={beta0:.6f}, gamma0={gamma0:.6f}')
     print()
 
@@ -127,7 +127,7 @@ def main() -> None:
         print()
 
     print('R0 threshold is clear and positive equilibria are stable.')
-    print('Note: tau values here are scenario-driven (assumed phi/psi), not empirically calibrated.')
+    print('Note: tau values here are scenario-driven (assumed phi/psi), not fully calibrated from Higgs.')
 
 
 if __name__ == '__main__':

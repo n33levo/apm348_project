@@ -1,145 +1,136 @@
 # Purpose
 
-## What this repo is, in normal language
+## What this repository is trying to do
 
-This repo is basically the clean version of the APM348 project after all the earlier drafts, random folders, and test files got stripped away. The core idea is to model how rage-bait style content moves through a platform over time, instead of only modeling users like a standard epidemic paper would do.
+This repository studies a simple but important platform question:
 
-So the main question is:
+how does stronger amplification help content spread in the short run, while also increasing harmful discussion pressure and reducing long-run user retention?
 
-how does platform amplification boost short-term virality, but also make the platform more toxic and possibly push users away over time?
+The project is built around a content-based ODE model rather than a standard user-only epidemic model. That is the main conceptual point of the work.
 
-That is the whole point of the project.
+Instead of only tracking people, the model tracks the lifecycle of content itself:
 
-## What the proposal is saying
+- `I` = ignored content
+- `V` = viral content
+- `F` = fatigued content
+- `S` = suppressed or moderated content
+- `tau` = aggregate harmful-discussion pressure
+- `U` = active users
 
-The proposal in `final.tex` and the matching PDF is pitching a content-centric ODE model. The states are:
+The platform amplification parameter `alpha` changes how aggressively content is pushed through the system.
 
-- I = ignored content
-- V = viral content
-- F = fatigued content
-- S = moderated or suppressed content
-- tau = overall toxicity level on the platform
-- U = active users
+## What the repo is meant to provide
 
-The important twist is that the spread and fatigue rates are not fixed. They depend on toxicity too, so the model uses:
+The repository is meant to be:
 
-- beta_eff = effective virality rate
-- gamma_eff = effective fatigue rate
+- a clean research version of the APM348 project
+- a reproducible calibration and simulation pipeline
+- a base for a stronger applied math paper after the course project
 
-That matters because it lets the platform environment feed back into the content lifecycle, instead of treating every post like it spreads in the exact same way forever.
+So the repo is not just a folder of plots. It is supposed to show:
 
-## What data we actually have
+- what is empirically grounded
+- what is still assumption-driven
+- what has already been established mathematically
+- what still needs to be proved
 
-Right now the real dataset in the repo is the Stanford SNAP Higgs Twitter activity stream.
+## What is empirically grounded right now
 
-We already verified the main counts:
+The main empirical dataset is the Stanford SNAP Higgs Twitter activity stream.
 
-- 563,069 total events
-- 354,930 RT events
-- RT just means retweet
-- the main retweet spike peaks at hour 78
-- that peak hour has 30,602 retweets
+What Higgs gives us directly:
 
-For calibration, we do not use the whole raw series directly. We bin retweets by hour, then take a 100-hour window around the main spike. That gives us a clean viral spike + decay shape to fit against the baseline IVF model.
+- retweet activity (`RT`) for spread calibration
+- reply activity (`RE`) for a same-dataset discussion-pressure proxy
 
-## What the code already does
+What Higgs does not give us:
 
-### `code/ivfs_validation.py`
-This is the main script.
+- tweet text
+- literal toxicity labels in the Jigsaw sense
 
-What it does:
+Because of that, the project is now more careful about what `tau` means.
 
-- makes sure the Higgs dataset exists in `data/`
-- unzips the file if needed
-- parses out only RT events
-- groups them into hourly counts
-- builds the 100-hour calibration window
-- fits the baseline IVF model with Nelder-Mead
-- runs the full IVFS-type model under 3 policy scenarios
-- runs the alpha sweep
-- saves the main figure to `assets/apm348_results.png`
+The most honest interpretation is:
 
-So if someone only runs one script in this repo, this is the one.
+- `tau` is a harmful-discussion or outrage-pressure variable
+- not a directly observed text-toxicity score
 
-### `code/equilibrium_analysis.py`
-This is the more math-heavy follow-up.
+That framing fits the data much better and keeps the project closer to the actual rage-bait idea.
 
-What it does:
+## What changed in the calibration story
 
-- uses the fitted beta0 and gamma0 from the Higgs calibration
-- checks the disease-free equilibrium
-- computes the positive equilibrium numerically
-- checks local stability through the Jacobian eigenvalues
+The project originally had a weaker spread fit. The late tail of the Higgs curve did not match well.
 
-This is useful because it gives us something stronger than just “we ran simulations and the plot looked nice.”
+That was fixed by improving the reduced helper calibration model. The current spread fit uses a decaying seed term, which allows the empirical Higgs spike and later decay to be fit much more cleanly.
 
-### `code/benchmark_models.py`
-This compares our content-centric setup against a simpler SIR benchmark on the same Higgs retweet spike.
+This matters because:
 
-That comparison is important because it keeps the claim honest.
+- the spread fit is now strong enough to act as a baseline
+- the benchmark against SIR is clearer
+- the threshold results are more believable
 
-The result is basically:
+At the moment, the spread side is the strongest part of the empirical project.
 
-- SIR can fit a one-dimensional viral spike pretty well too
-- so the novelty is not “our model crushes SIR on one curve fit”
-- the novelty is that our model has content states, moderation, toxicity, and user-retention dynamics that SIR does not have
+## What the tau side means now
 
-### `code/toxicity_calibration.py`
-This is the placeholder for the next empirical step.
+The tau side is the part that still needs the most care.
 
-Right now it looks for either:
+Right now the repository compares three tau interpretations:
 
-- Jigsaw-style toxicity labels
-- Ruddit-style offensiveness scores
+1. a baseline fixed `phi, psi` choice
+2. a Higgs `RE` proxy fit
+3. an external Jigsaw-based reference scale
 
-But we do not currently have a toxicity-labeled dataset inside this repo. So the script is ready, but the real direct toxicity calibration has not happened yet.
+The important point is that the Higgs `RE` fit is now the best same-dataset tau-side experiment in the repo, but it still does not mean `phi` and `psi` are fully and perfectly identified.
 
-## What results we already have
+So the honest claim is:
 
-From the clean calibration run, the baseline fitted rates are:
+- the repo now has a partially grounded tau block
+- not a perfectly calibrated toxicity block
 
-- beta0 = 0.818194 per hour
-- gamma0 = 0.211753 per hour
+## What the mathematical purpose is
 
-From the scenario runs:
+The empirical code is only one part of the larger goal.
 
-- alpha = 0.9 gives higher toxicity and lower user retention
-- alpha = 0.5 is in the middle
-- alpha = 0.2 gives lower toxicity and better user retention
+The bigger mathematical purpose is to turn this from a simulation project into a real applied math paper by proving the core structure of the model:
 
-From the equilibrium check:
+- nonnegativity of solutions
+- a positively invariant region
+- a rigorous threshold quantity `R0`
+- local and then global stability
+- bifurcation behavior at `R0 = 1`
 
-- the disease-free equilibrium is unstable in the tested scenarios
-- a positive equilibrium exists for alpha = 0.2, 0.5, 0.9
-- that positive equilibrium is locally stable in the clean calibrated setup
+That is the direction most emphasized in `scratch/research.md`, and it is also the part that would matter most for publication beyond the course project.
 
-So the project already has a real calibration step, a real simulation step, and a real equilibrium/stability step.
+## What we can honestly claim today
 
-## What we can honestly claim rn
+The strongest defensible claim today is:
 
-The strong version we can defend is:
+this repository contains a content-centric IVFS framework with a strong Higgs-based spread calibration, a same-dataset reply-pressure proxy for `tau`, and a clear policy tradeoff between amplification, discussion pressure, and user retention.
 
-this is a content-centric deterministic ODE framework with preliminary data grounding from a real social media cascade.
+The weaker claim that should not be made is:
 
-The version we should not overclaim is:
+every parameter in the full model is already cleanly estimated from one perfect dataset.
 
-this is already a fully data-calibrated proof of bistability for platform toxicity.
+That is still not true, and the repo should stay honest about that.
 
-That would be too strong rn because:
+## What this repo should become
 
-- only beta0 and gamma0 are directly fit from data
-- the toxicity side is still parameterized mostly through assumptions and sensitivity choices
-- the clean parameterization supports threshold and local stability results, but not a full dramatic bistability theorem yet
+In the short term, this repo should function as:
 
-## What the assets are
+- the clean public version of the project
+- the reproducible source for the figures and scripts
+- the base documentation for GitHub
 
-There are 2 main generated figures in `assets/`:
+In the longer term, it should become:
 
-- `apm348_results.png` = calibration + scenario time series + alpha sweep
-- `benchmark_curve_compare.png` = IVF vs SIR fit comparison on the Higgs spike
+- a math-first paper repository
+- with stronger theorem-level results
+- broader empirical validation
+- and clearer positioning relative to the existing literature
 
-## Big-picture summary
+## Bottom line
 
-If I had to explain the whole repo in like 20 seconds, I would say:
+The purpose of this repository is not just to fit one viral curve.
 
-this project takes a real viral event dataset, fits the basic spread/fatigue part of a content-lifecycle model, then uses that to study the tradeoff between amplification, toxicity, and user retention on a platform. The course-project version is already in good shape. The paper version would need stronger proofs and better toxicity data.
+Its real purpose is to build a mathematically meaningful and empirically grounded framework for studying how platform amplification affects virality, harmful discussion pressure, and user retention, while being honest about what is already established and what still needs to be proved.

@@ -122,14 +122,14 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
         'Health-First (alpha=0.2)': '#2E7D32',
     }
 
-    # panel 2 -- toxicity, SIR can't do this
+    # panel 2 -- discussion pressure, SIR can't do this
     for label, data in scenario_results.items():
         axs[1].plot(t_scenario, data['solution'][:, 4], linewidth=2.0,
                     color=colors[label], label=label)
     axs[1].axhline(0, color='gray', linewidth=0.8, linestyle=':')
-    axs[1].set_title('(b) Toxicity τ(t) (IVFS only)')
+    axs[1].set_title('(b) Discussion Pressure τ(t) (IVFS only)')
     axs[1].set_xlabel('Time')
-    axs[1].set_ylabel('Aggregate toxicity \u03C4')
+    axs[1].set_ylabel('Aggregate discussion pressure \u03C4')
     axs[1].set_xlim(0, SCENARIO_DISPLAY_HOURS)
     axs[1].set_ylim(bottom=0)
     axs[1].legend(fontsize=8)
@@ -144,7 +144,7 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
     axs[2].set_xlim(0, SCENARIO_DISPLAY_HOURS)
     axs[2].legend(fontsize=8)
 
-    fig.suptitle('Benchmark: IVF vs SIR (IVFS adds toxicity + user structure)', fontsize=13, fontweight='bold', y=1.01)
+    fig.suptitle('Benchmark: IVF vs SIR (IVFS adds discussion-pressure + user structure)', fontsize=13, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -198,7 +198,7 @@ def main() -> None:
     print(f'Saved figure: {FIGURE_PATH}')
     print()
     print('Across the full Higgs window, IVF now fits the spike and late tail much better than SIR.')
-    print('IVFS additionally carries toxicity and user-retention dynamics that SIR cannot represent.')
+    print('IVFS additionally carries discussion-pressure and user-retention dynamics that SIR cannot represent.')
 
 
 if __name__ == '__main__':

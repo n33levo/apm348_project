@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""check if we have a jigsaw/ruddit toxicity csv and print some stats"""
+"""check if we have an external toxicity dataset and print a reference summary"""
 
 import csv
 import sys
@@ -113,10 +113,10 @@ def main() -> None:
         summary = summarize_jigsaw(selected)
         for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
-        # figure out what phi/psi should be from the data
+        # use Jigsaw only as an external reference for the tau-side scale
         mean_tau = summary['toxic_any_rate']
-        print(f'\n  Empirical tau proxy (mean toxicity rate): {mean_tau:.6f}')
-        print('  Note: Jigsaw is an external toxicity reference, not the main Higgs calibration.')
+        print(f'\n  External tau reference (mean toxicity rate): {mean_tau:.6f}')
+        print('  Note: Jigsaw is an external toxicity reference, not the main Higgs reply-pressure calibration.')
         print('  Model constraint: phi/psi = mean_tau / V*(alpha=0.5)')
         try:
             from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, PHI, PSI, build_hourly_curve, ensure_dataset,
@@ -133,9 +133,9 @@ def main() -> None:
             ratio = mean_tau / v_star if v_star > 0 else float('inf')
             implied_phi = ratio * PSI if np.isfinite(ratio) else float('inf')
             print(f'  V* at alpha=0.5: {v_star:.6f}')
-            print(f'  => implied phi/psi = {ratio:.4f}  (model uses PHI={PHI}, PSI={PSI}, ratio={PHI/PSI:.4f})')
+            print(f'  => implied phi/psi = {ratio:.4f}  (model baseline uses PHI={PHI}, PSI={PSI}, ratio={PHI/PSI:.4f})')
             print(f'  => implied PHI with PSI fixed at {PSI:.3f}: {implied_phi:.4f}')
-            print('  Jigsaw is an external reference distribution, not the main Higgs calibration source.')
+            print('  Jigsaw is an external reference distribution, not the main Higgs source for tau fitting.')
         except Exception as exc:
             print(f'  (could not run IVFS model: {exc})')
     elif RUDDIT_COLUMN in header_set:
