@@ -185,7 +185,7 @@ Figure~\ref{fig:cal} shows the calibration diagnostics. Figure~\ref{fig:taucompa
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
-\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy, and the same spread fit is compared against the baseline pressure block, a decay-anchored same-dataset RE fit, an unconstrained same-dataset RE fit, an external reference scale, and the cross-anchored configuration (Higgs $\psi$ combined with external gain ratio $r=\phi/\psi$). The cross-anchored case is the preferred jointly-grounded anchor. The Health-First case is subcritical in all setups, so its long-run pressure remains essentially zero.}
+\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy. Panel~(a) compares the proxy against the baseline pressure block, two same-dataset Higgs fits (decay-anchored and unconstrained), an external reference scale, and the reference-constrained configuration. The external-scale and reference-constrained curves share the same $\tau^*$ by construction (same $\phi/\psi$) and differ only in transient speed, as annotated in panel~(b). The Health-First case is subcritical in all setups, so its long-run pressure remains essentially zero.}
 \label{fig:taucompare}
 \end{figure}
 
@@ -312,25 +312,45 @@ with anchored proxy-fit quality $R^2 \approx 0.0952$. The unconstrained same-dat
 \]
 with proxy-fit quality $R^2 \approx 0.7422$. The wide gap between these two same-dataset fits is itself the key identifiability result: the spread data and the reply proxy support the qualitative pressure story, but they do not uniquely determine one definitive $(\phi,\psi)$ pair under the present one-timescale pressure block.
 
-\textbf{Cross-anchored resolution.}
-This identification problem has a principled solution when an external toxicity reference is available.
-The key observation is that the normalized proxy shape identifies $\psi$ (the pressure decay
-timescale) via the post-peak decay slope of the RE activity, while the external toxicity rate
-anchors the steady-state gain ratio $r = \phi/\psi$ via $r = \tau_{\mathrm{ref}}/V^*_{\mathrm{mod}}$.
-Combining these two independent pieces of information gives the \emph{cross-anchored} configuration:
+\textbf{Reference-constrained resolution.}
+The identification problem has a principled partial resolution when an external toxicity
+reference is available.
+The external toxicity rate anchors the steady-state gain ratio
 \[
-\psi_{\mathrm{cross}} \approx 0.0409 \quad \text{(Higgs RE decay timescale)},
-\qquad
-r = \frac{\phi_{\mathrm{ext}}}{\psi_{\mathrm{default}}} \approx 1.46 \quad \text{(external reference)},
+r = \frac{\phi}{\psi} = \frac{\tau_{\mathrm{ref}}}{V^*_{\mathrm{mod}}} \approx \frac{0.1017}{0.0697} \approx 1.46,
 \]
+which constrains the pair $(\phi,\psi)$ to the line $\phi = r\psi$ in parameter space.
+Any point on that line gives the same long-run $\tau^* = r \cdot V^*_{\mathrm{mod}} \approx \tau_{\mathrm{ref}}$,
+so the scale constraint alone does not select a unique point.
+The \emph{reference-constrained} configuration resolves the remaining degree of freedom by
+treating $\psi$ as the single free parameter on the constraint line and choosing the $\psi$ that
+minimises the weighted proxy-fit loss directly.
+This 1-D optimisation---with $\phi = r\psi$ enforced at every step---finds the point on the
+constraint line that best explains the same-dataset RE proxy dynamics.
+In the current run this gives
 \[
-\phi_{\mathrm{cross}} = r \cdot \psi_{\mathrm{cross}} \approx 1.46 \times 0.0409 \approx 0.0597.
+\phi_{\mathrm{rc}} \approx 0.417, \qquad \psi_{\mathrm{rc}} \approx 0.286,
 \]
-By construction, the cross-anchored equilibrium satisfies $\tau^* = r \cdot V^*_{\mathrm{mod}} \approx \tau_{\mathrm{ref}}$
-at the moderate scenario, matching the external toxicity reference, while its transient pressure dynamics
-follow the empirically estimated Higgs relaxation timescale rather than the arbitrary default $\psi=0.1$.
-The cross-anchored configuration is now included in the tau comparison figure as the preferred
-jointly-grounded anchor.
+with proxy-fit $R^2 \approx 0.41$.
+This is better than both the decay-anchored ($R^2 \approx 0.10$) and plain
+external-scale ($R^2 \approx 0.31$) configurations, confirming that $\psi=0.286$ is a better-supported
+relaxation timescale than the default $\psi=0.1$, while the external reference level is still maintained.
+
+One important consequence: because the reference-constrained and external-scale configurations
+share the same gain ratio $r = \phi/\psi$, they produce \emph{identical} long-run $\tau^*$
+and therefore identical bars in panel~(b) of Figure~\ref{fig:taucompare}.
+Their difference is visible only in panel~(a): the reference-constrained curve ($\psi \approx 0.286$)
+decays faster after the spike than the external-scale curve ($\psi = 0.1$).
+
+The remaining gap between the reference-constrained ($R^2 \approx 0.41$) and
+unconstrained ($R^2 \approx 0.74$) fits \emph{is} the identification problem.
+The unconstrained fit achieves better proxy shape agreement but uses a scale
+($\tau^*_{\mathrm{mod}} \approx 0.067$) inconsistent with the external reference.
+Closing this gap would require either a dataset with both spread data and directly-observed
+toxicity labels, or a multi-timescale $\tau$ model.
+For the present course report, the reference-constrained configuration is the most defensible
+single-point answer: it satisfies the external reference and finds the best proxy dynamics
+consistent with that constraint.
 
 \begin{figure}[H]
 \centering
@@ -344,7 +364,7 @@ The current report has several important limitations.
 \begin{enumerate}[leftmargin=1.5em]
     \item The spread calibration is based on one main Higgs event window.
     \item Higgs does not contain text, so the pressure block is proxy-grounded rather than directly text-calibrated.
-    \item The latent-pressure parameters $\phi$ and $\psi$ are only partially identified from the same-dataset proxy alone. The cross-anchored configuration addresses this by combining the Higgs decay timescale with the external toxicity reference, but a formally identified latent observation model would require a richer multi-timescale data structure.
+    \item The latent-pressure parameters $\phi$ and $\psi$ are only partially identified from the same-dataset proxy alone. The reference-constrained configuration gives the best $(\phi,\psi)$ pair consistent with the external reference constraint, but a fully resolved calibration would require either direct text-toxicity labels or a multi-timescale $\tau$ model.
     \item The model assumes homogeneous mixing and deterministic dynamics.
     \item The threshold quantity used here comes from DFE linearization; a more formal next-generation-matrix derivation is still desirable for a journal version.
 \end{enumerate}

@@ -377,6 +377,76 @@ def fit_tau_proxy_unconstrained(v_series: np.ndarray,
     return float(phi_fit), float(psi_fit), float(weighted_loss), float(r2), tau_fit
 
 
+def fit_tau_proxy_reference_constrained(
+    v_series: np.ndarray,
+    tau_target: np.ndarray,
+    r_gain: float,
+    re_counts: np.ndarray | None = None,
+    mt_counts: np.ndarray | None = None,
+) -> tuple[float, float, float, float, np.ndarray]:
+    """Find the optimal (phi, psi) on the constraint line phi = r_gain * psi.
+
+    The external toxicity reference fixes the steady-state gain ratio
+    r_gain = tau_ref / V*_moderate = phi/psi, which confines the parameter
+    pair to a line in (phi, psi) space.  Within that line, psi is the single
+    free parameter.  This function optimises psi by 1-D grid-then-refine search
+    for the best weighted proxy-fit quality.
+
+    This is strictly better-motivated than the cross-anchored heuristic (which
+    reads psi from the post-peak decay slope of the RE proxy) because it searches
+    the entire constraint line and finds the psi that minimises proxy loss directly.
+
+    IMPORTANT: all configs sharing the same r_gain = phi/psi produce the same
+    long-run tau* = r_gain * V*.  The reference-constrained and external configs
+    therefore have identical long-run policy outcomes; they differ only in how
+    fast the pressure relaxes (i.e. in transient dynamics).
+    """
+    v_arr = np.asarray(v_series, dtype=float)
+    tau_target_arr = np.asarray(tau_target, dtype=float)
+    tau0 = float(max(tau_target_arr[0], 0.0)) if tau_target_arr.size else 0.0
+
+    if re_counts is not None:
+        base_counts = np.asarray(re_counts, dtype=float)
+        if mt_counts is not None:
+            base_counts = base_counts + 0.5 * np.asarray(mt_counts, dtype=float)
+        weights = np.sqrt(base_counts + 1.0)
+        weights /= float(np.mean(weights) + 1e-12)
+    else:
+        weights = np.ones_like(tau_target_arr)
+
+    psi_lo, psi_hi = TAU_PARAM_BOUNDS[1]
+    phi_lo, phi_hi = TAU_PARAM_BOUNDS[0]
+    r = float(r_gain)
+
+    # Restrict psi to the sub-interval where phi = r*psi stays within bounds.
+    # Above psi_max the phi bound would be violated, breaking the constraint.
+    psi_max = float(np.clip(phi_hi / r, psi_lo, psi_hi)) if r > 0.0 else psi_hi
+
+    def loss_at_psi(psi_val: float) -> float:
+        psi_c = float(np.clip(psi_val, psi_lo, psi_max))
+        phi_c = float(np.clip(r * psi_c, phi_lo, phi_hi))
+        tau_model = simulate_tau_from_v(v_arr, phi_c, psi_c, tau0=tau0)
+        w_loss, _ = tau_fit_metrics(tau_target_arr, tau_model, weights)
+        return w_loss
+
+    psi_grid = np.linspace(psi_lo, psi_max, 60)
+    losses = np.array([loss_at_psi(p) for p in psi_grid])
+    best_psi_init = float(psi_grid[int(np.argmin(losses))])
+
+    result = minimize(
+        lambda x: loss_at_psi(float(x[0])),
+        x0=np.array([best_psi_init]),
+        method='Powell',
+        bounds=[(psi_lo, psi_max)],
+        options={'maxiter': 1000, 'xtol': 1e-6, 'ftol': 1e-6},
+    )
+    opt_psi = float(np.clip(result.x[0], psi_lo, psi_max))
+    opt_phi = float(np.clip(r * opt_psi, phi_lo, phi_hi))
+    tau_fit = simulate_tau_from_v(v_arr, opt_phi, opt_psi, tau0=tau0)
+    best_loss, best_r2 = tau_fit_metrics(tau_target_arr, tau_fit, weights)
+    return opt_phi, opt_psi, float(best_loss), float(best_r2), tau_fit
+
+
 def fit_tau_proxy(v_series: np.ndarray,
                   tau_target: np.ndarray,
                   re_counts: np.ndarray | None = None,

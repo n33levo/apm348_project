@@ -208,6 +208,13 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
         bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.8),
         arrowprops=dict(arrowstyle='-', color='gray', linewidth=0.8),
     )
+    if 'external' in tau_configs and 'reference_constrained' in tau_configs:
+        axs[1].text(
+            0.99, 0.97,
+            'External and ref.-constrained share\nthe same $\\tau^*$ (same $\\phi/\\psi$).\nDifference is transient speed only\n(see panel a).',
+            transform=axs[1].transAxes, fontsize=7, ha='right', va='top',
+            bbox=dict(boxstyle='round,pad=0.3', fc='lightyellow', alpha=0.85),
+        )
     axs[1].legend(fontsize=8)
 
     fig.suptitle('APM348 Tau-Side Comparison (Latent Pressure Proxy + External Reference)', fontsize=13, fontweight='bold', y=1.02)

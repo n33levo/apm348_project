@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.integrate import odeint
 
-from ivfs_calibration import fit_tau_proxy, simulate_tau_from_v, tau_fit_metrics
+from ivfs_calibration import fit_tau_proxy, fit_tau_proxy_reference_constrained, simulate_tau_from_v, tau_fit_metrics
 from ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, SCENARIO_ALPHAS, TAU_PARAM_BOUNDS, W)
 
 
@@ -241,25 +241,44 @@ def build_tau_configurations(beta0: float,
             ext_label = f'External scale ({external_source})'
         add_config('external', ext_label, float(external_phi), PSI, '#6A1B9A')
 
-    # Cross-anchored resolution of the identification problem.
-    # The tau equation dτ/dt = φV - ψτ has τ* = (φ/ψ)·V* at steady state.
-    # Fitting a normalized proxy only pins down ψ (timescale/shape); φ/ψ (level) is
-    # unidentified from shape alone.  We resolve this by combining two independent sources:
-    #   (1) ψ from the Higgs RE post-peak decay timescale  (internal, identifies dynamics)
-    #   (2) r = φ/ψ from the external toxicity reference   (external, identifies level)
-    # Then φ_cross = r · ψ_decay, giving a jointly grounded (φ, ψ) pair.
+    # Reference-constrained fit.
+    # The external reference fixes r = phi/psi = tau_ref / V*_moderate, which
+    # constrains (phi, psi) to the line phi = r*psi.  Any point on that line
+    # produces the SAME long-run tau* = r*V*, so the external and
+    # reference-constrained configs share identical long-run policy outcomes.
+    # Within the constraint, psi is the single free parameter; we optimise it
+    # over [psi_lo, phi_hi/r] for the best weighted proxy-fit quality.
+    # This is strictly better than the earlier ad hoc cross-anchoring, which
+    # picked psi from the post-peak decay slope and did not search the constraint
+    # line for the best-fitting point.
     if external_phi is not None and np.isfinite(external_phi):
-        psi_cross = float(fit_diag.get('psi_decay', PSI))
-        # psi_decay must be above the lower bound to be a valid estimate
-        if psi_cross >= TAU_PARAM_BOUNDS[1][0] * 2.0:
-            # r = φ_ext / PSI because external_phi was computed as tau_ref * PSI / V*_mod
-            # so external_phi / PSI = tau_ref / V*_mod = r
-            r_gain = float(external_phi) / PSI
-            phi_cross = float(np.clip(r_gain * psi_cross, TAU_PARAM_BOUNDS[0][0], TAU_PARAM_BOUNDS[0][1]))
-            cross_label = 'Cross-anchored (Higgs \u03c8, ext. scale)'
-            if external_source:
-                cross_label = f'Cross-anchored (Higgs \u03c8 + {external_source})'
-            add_config('cross_anchored', cross_label, phi_cross, psi_cross, '#2E7D32')
+        r_gain = float(external_phi) / PSI
+        re_w_arr = np.asarray(re_window, dtype=float) if re_window is not None else None
+        mt_w_arr = np.asarray(mt_window, dtype=float) if mt_window is not None else None
+        phi_rc, psi_rc, _, _, tau_curve_rc = fit_tau_proxy_reference_constrained(
+            fitted_v, tau_target, r_gain, re_w_arr, mt_w_arr,
+        )
+        rc_label = 'Reference-constrained'
+        if external_source:
+            rc_label = f'Ref.-constrained ({external_source})'
+        weights_rc = (
+            np.sqrt(re_w_arr + 1.0) / float(np.mean(np.sqrt(re_w_arr + 1.0)) + 1e-12)
+            if re_w_arr is not None else None
+        )
+        proxy_loss_rc, proxy_r2_rc = tau_fit_metrics(tau_target, tau_curve_rc, weights_rc)
+        t_scenario_rc, scenario_results_rc = run_scenarios(beta0, gamma0, phi=phi_rc, psi=psi_rc)
+        tau_configs['reference_constrained'] = {
+            'label': rc_label,
+            'phi': phi_rc,
+            'psi': float(psi_rc),
+            'color': '#2E7D32',
+            'tau_curve': tau_curve_rc,
+            'proxy_loss': proxy_loss_rc,
+            'proxy_r2': proxy_r2_rc,
+            'proxy_name': best_proxy_name,
+            't_scenario': t_scenario_rc,
+            'scenario_results': scenario_results_rc,
+        }
 
     return tau_configs
 
