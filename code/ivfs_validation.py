@@ -214,6 +214,17 @@ def main() -> None:
                     f"points={int(cfg['fit_diag']['decay_points'])}, "
                     f"anchored-fit R2={cfg['fit_diag']['r2_decay_fit']:.4f}"
                 )
+                print(
+                    f"{'':<10} regularized phi={cfg['fit_diag']['phi_regularized']:.4f}, "
+                    f"psi={cfg['fit_diag']['psi_regularized']:.4f}, "
+                    f"regularized R2={cfg['fit_diag']['r2_regularized']:.4f}, "
+                    f"penalty={cfg['fit_diag']['penalty_weight']:.4f}"
+                )
+                print(
+                    f"{'':<10} unconstrained phi={cfg['fit_diag']['phi_unconstrained']:.4f}, "
+                    f"psi={cfg['fit_diag']['psi_unconstrained']:.4f}, "
+                    f"unconstrained R2={cfg['fit_diag']['r2_unconstrained']:.4f}"
+                )
 
     print()
     print('Sensitivity (alpha=0.5, +/-50% each param):')

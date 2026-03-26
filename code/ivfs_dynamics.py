@@ -214,7 +214,7 @@ def build_tau_configurations(beta0: float,
     fit_diag = best_proxy_fit['fit_diag']
     t_scenario_fit, scenario_results_fit = run_scenarios(beta0, gamma0, phi=phi_fit, psi=psi_fit)
     tau_configs['higgs_fit'] = {
-        'label': f'Higgs latent-pressure fit ({best_proxy_name})',
+        'label': f'Decay-regularized Higgs fit ({best_proxy_name})',
         'phi': phi_fit,
         'psi': psi_fit,
         'color': '#C62828',

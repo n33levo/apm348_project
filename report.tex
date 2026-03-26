@@ -185,7 +185,7 @@ Figure~\ref{fig:cal} shows the calibration diagnostics. Figure~\ref{fig:taucompa
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
-\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy, and the same spread fit is combined with a baseline pressure block, an unconstrained same-dataset RE-based fit, and an external reference scale.}
+\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy, and the same spread fit is combined with a baseline pressure block, a decay-regularized same-dataset RE-based fit, and an external reference scale.}
 \label{fig:taucompare}
 \end{figure}
 
@@ -300,13 +300,17 @@ The code now performs two relevant robustness checks:
 \end{enumerate}
 Across the $\phi$ sweep, the qualitative ordering of the three policy scenarios is preserved: engagement-first always yields the highest long-run pressure, moderate stays in the middle, and health-first stays lowest. That means the main policy ranking is not an artifact of one single baseline choice for $\phi$.
 
-This $\phi$ sweep is a \emph{local} robustness check around the baseline scenario block with $\psi$ held fixed at $0.1$, so it is designed to compare the current baseline $\phi=0.056$ against the external-reference scale $\phi\approx 0.1459$. It is not intended to reproduce the separate unconstrained RE-based fit, because that fit changes both $\phi$ and $\psi$ simultaneously and lands at the edge of the allowed parameter box.
+This $\phi$ sweep is a \emph{local} robustness check around the baseline scenario block with $\psi$ held fixed at $0.1$, so it is designed to compare the current baseline $\phi=0.056$ against the external-reference scale $\phi\approx 0.1459$. It is not intended to reproduce the separate same-dataset RE-based fit, because that fit changes both $\phi$ and $\psi$ simultaneously and therefore sits on a different identification slice.
 
-For the same-dataset proxy family, the present implementation selects the RE proxy as the most interpretable and best-supported same-dataset target. The displayed same-dataset fit is the best unconstrained proxy fit, while the decay-based estimate is kept as a separate identifiability diagnostic. The current displayed RE-based fit gives approximately
+For the same-dataset proxy family, the present implementation selects the RE proxy as the most interpretable and best-supported same-dataset target. The displayed same-dataset fit is a decay-regularized RE-based fit, where the empirical reply-decay timescale is used as a soft anchor on $\psi$ rather than a hard constraint. In the current run this displayed RE-based fit gives approximately
+\[
+\phi \approx 0.5298, \qquad \psi \approx 0.5296,
+\]
+with proxy-fit quality $R^2 \approx 0.6944$. For comparison, the raw unconstrained fit pushes toward
 \[
 \phi \approx 0.9596, \qquad \psi \approx 1.0000,
 \]
-while the decay anchor gives approximately $\psi_{\mathrm{decay}} \approx 0.0409$. The fact that the best unconstrained fit pushes toward the parameter bounds is itself evidence that the pressure block is only partially identified. That is why the report treats the RE-based fit as a useful same-dataset proxy experiment rather than as a fully resolved toxicity calibration.
+while the pure decay anchor gives approximately $\psi_{\mathrm{decay}} \approx 0.0409$. The spread between these values is direct evidence that the pressure block is only partially identified. That is why the report treats the RE-based fit as a useful same-dataset proxy experiment rather than as a fully resolved toxicity calibration.
 
 \begin{figure}[H]
 \centering

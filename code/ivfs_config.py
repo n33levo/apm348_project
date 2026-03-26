@@ -47,6 +47,8 @@ TAU_PARAM_BOUNDS = (
     (0.01, 1.0),
 )
 
+TAU_PSI_REGULARIZATION_SCALE = 1.0
+
 TAU_PROXY_WEIGHTS = {
     're': 0.55,
     'ratio': 0.30,
