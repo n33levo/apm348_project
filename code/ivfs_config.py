@@ -46,3 +46,11 @@ TAU_PARAM_BOUNDS = (
     (0.005, 1.0),
     (0.01, 1.0),
 )
+
+TAU_PROXY_WEIGHTS = {
+    're': 0.55,
+    'ratio': 0.30,
+    'mt': 0.15,
+}
+
+TAU_DECAY_MIN_POINTS = 6

@@ -23,11 +23,14 @@ def main() -> None:
     print('=' * 68)
 
     ensure_dataset()
-    rt_timestamps, re_timestamps, total_rows = parse_activity_file(HIGGS_TXT)
-    cal = build_hourly_curve(rt_timestamps, re_timestamps)
+    rt_timestamps, re_timestamps, mt_timestamps, total_rows = parse_activity_file(HIGGS_TXT)
+    cal = build_hourly_curve(rt_timestamps, re_timestamps, mt_timestamps)
     window_counts = cal['rt_window']
     re_window = cal.get('re_window')
-    reply_proxy = cal.get('reply_proxy')
+    mt_window = cal.get('mt_window')
+    tau_proxy = cal.get('tau_proxy')
+    re_proxy = cal.get('re_proxy')
+    ratio_proxy = cal.get('reply_ratio')
     peak_hour = cal['peak_hour']
     window_start = cal['window_start']
     hourly_counts = cal['hourly_counts']
@@ -77,15 +80,30 @@ def main() -> None:
     if external_tau_ref is not None and moderate_v_star > 1e-12:
         external_phi = float(external_tau_ref * PSI / moderate_v_star)
 
+    tau_proxy_candidates = {}
+    if re_proxy is not None:
+        tau_proxy_candidates['RE proxy'] = np.asarray(re_proxy, dtype=float)
+    if ratio_proxy is not None:
+        tau_proxy_candidates['RE/(RT+1) proxy'] = np.asarray(ratio_proxy, dtype=float)
+    if tau_proxy is not None:
+        tau_proxy_candidates['composite proxy'] = np.asarray(tau_proxy, dtype=float)
+
     tau_configs = build_tau_configurations(
         beta0,
         gamma0,
         fitted_norm,
-        reply_proxy,
+        tau_proxy_candidates,
         re_window,
+        mt_window,
         external_phi=external_phi,
         external_source=external_source,
     )
+
+    selected_proxy_name = 'selected same-dataset proxy'
+    selected_proxy = tau_proxy
+    if tau_configs and tau_configs.get('higgs_fit', {}).get('proxy_name') in tau_proxy_candidates:
+        selected_proxy_name = str(tau_configs['higgs_fit']['proxy_name'])
+        selected_proxy = tau_proxy_candidates[selected_proxy_name]
 
     phi_candidates = [PHI]
     if external_phi is not None and np.isfinite(external_phi):
@@ -97,11 +115,13 @@ def main() -> None:
     make_phi_sensitivity_figure(phi_grid, phi_results, PHI, external_phi, external_source)
 
     make_calibration_figure(empirical_norm, fitted_norm, window_counts,
-                            re_window, reply_proxy,
+                            re_window, mt_window, tau_proxy,
+                            re_proxy, ratio_proxy,
+                            selected_proxy, selected_proxy_name,
                             fit_window_hours,
                             weighted_loss, r2_fit, r2_full, r2_spike, tail_bias)
-    if tau_configs:
-        make_tau_comparison_figure(reply_proxy, re_window, tau_configs)
+    if tau_configs and selected_proxy is not None:
+        make_tau_comparison_figure(selected_proxy, selected_proxy_name, re_window, tau_configs)
     make_results_figure(t_scenario, scenario_results,
                         alphas, tau_star, v_star_cont, u_star_cont, alpha_r0)
 
@@ -112,6 +132,7 @@ def main() -> None:
     print(f'Total activity rows: {total_rows:,}')
     print(f'RT events: {len(rt_timestamps):,}')
     print(f'RE events: {len(re_timestamps):,}')
+    print(f'MT events: {len(mt_timestamps):,}')
     print(f'Peak RT hour: {peak_hour} (count={int(hourly_counts[peak_hour]):,})')
     print(f'Calibration window: hours {window_start}..{window_start + len(window_counts) - 1}')
     print(f'Calibration fit window used: 0..{fit_window_hours - 1}')
@@ -129,6 +150,9 @@ def main() -> None:
     if re_window is not None:
         re_rt_corr = float(np.corrcoef(cal['re_window'], window_counts)[0, 1])
         print(f'RE-RT correlation in window: {re_rt_corr:.4f}')
+    if mt_window is not None:
+        mt_rt_corr = float(np.corrcoef(mt_window, window_counts)[0, 1])
+        print(f'MT-RT correlation in window: {mt_rt_corr:.4f}')
 
     print()
     print('Baseline scenario long-run values (integrated to t=500; current fixed tau setup):')
@@ -166,9 +190,10 @@ def main() -> None:
 
     if tau_configs:
         print()
-        print('Reply-pressure proxy comparison (same spread fit, different tau setups):')
-        print(f'{"config":<28} {"phi":<8} {"psi":<8} {"proxy_loss":<12} {"proxy_R2":<10} {"tau*_0.2":<10} {"tau*_0.5":<10} {"tau*_0.9":<10} {"ordered":<8} {"alpha0.2 subcrit":<16}')
-        for cfg in tau_configs.values():
+        chosen_proxy = next((cfg.get('proxy_name') for cfg in tau_configs.values() if cfg.get('proxy_name')), 'same-dataset proxy')
+        print(f'Latent-pressure proxy comparison (fit target: {chosen_proxy}):')
+        print(f'{"key":<10} {"phi":<8} {"psi":<8} {"proxy_loss":<12} {"proxy_R2":<10} {"tau*_0.2":<10} {"tau*_0.5":<10} {"tau*_0.9":<10} {"ordered":<8} {"subcrit":<8}')
+        for key, cfg in tau_configs.items():
             cfg_scen = cfg['scenario_results']
             tau_hf = max(0.0, float(cfg_scen['Health-First (alpha=0.2)']['tau_star']))
             tau_mod = max(0.0, float(cfg_scen['Moderate (alpha=0.5)']['tau_star']))
@@ -176,11 +201,19 @@ def main() -> None:
             ordered = (tau_eng >= tau_mod - 1e-10) and (tau_mod >= tau_hf - 1e-10)
             subcrit = max(0.0, float(cfg_scen['Health-First (alpha=0.2)']['V_star'])) < 1e-6
             print(
-                f"{cfg['label'][:28]:<28} {cfg['phi']:<8.4f} {cfg['psi']:<8.4f} "
+                f"{key:<10} {cfg['phi']:<8.4f} {cfg['psi']:<8.4f} "
                 f"{cfg['proxy_loss']:<12.4f} {cfg['proxy_r2']:<10.4f} "
                 f"{tau_hf:<10.4f} {tau_mod:<10.4f} {tau_eng:<10.4f} "
-                f"{str(ordered):<8} {str(subcrit):<16}"
+                f"{str(ordered):<8} {str(subcrit):<8}"
             )
+            print(f"{'':<10} label={cfg['label']}")
+            if 'fit_diag' in cfg:
+                print(
+                    f"{'':<10} decay-anchored psi={cfg['fit_diag']['psi_decay']:.4f}, "
+                    f"decay R2={cfg['fit_diag']['psi_decay_r2']:.4f}, "
+                    f"points={int(cfg['fit_diag']['decay_points'])}, "
+                    f"anchored-fit R2={cfg['fit_diag']['r2_decay_fit']:.4f}"
+                )
 
     print()
     print('Sensitivity (alpha=0.5, +/-50% each param):')
