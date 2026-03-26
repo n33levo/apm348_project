@@ -157,7 +157,7 @@ The code now constructs a small proxy family and chooses the best same-dataset f
     \item a smoothed reply-rate proxy $RE/(RT+1)$,
     \item a composite proxy $0.55\,RE + 0.30\,RE/(RT+1) + 0.15\,MT$ after normalization.
 \end{itemize}
-In the present run, the RE proxy is the best-supported same-dataset target for the latent-pressure fit.
+In the present run, the RE proxy is the best-supported same-dataset target for the latent-pressure fit. Under the current one-timescale pressure block, the unconstrained proxy-fit quality is $R^2 \approx 0.7422$ for the RE proxy, compared with $R^2 \approx -0.5302$ for the composite proxy and $R^2 \approx -1.1419$ for the reply-rate proxy. That ranking is why the report highlights RE rather than claiming that any smoothed interaction measure is equally defensible.
 
 \subsection{External toxicity reference}
 The file [data/toxicity/train.csv] in the repository is a Jigsaw-style toxicity dataset. It is not used as a spread dataset and it is not treated as a same-system calibration source. Instead, it gives an external reference scale for the size of $\tau$. The mean toxicity rate in that file is approximately $0.101679$, which implies an external-scale comparison value of $\phi \approx 0.1459$ if $\psi$ is fixed at $0.1$ and the moderate-scenario equilibrium viral volume is used for scaling.
@@ -185,7 +185,7 @@ Figure~\ref{fig:cal} shows the calibration diagnostics. Figure~\ref{fig:taucompa
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
-\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy, and the same spread fit is combined with a baseline pressure block, a decay-regularized same-dataset RE-based fit, and an external reference scale.}
+\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy, and the same spread fit is compared against the baseline pressure block, a decay-anchored same-dataset RE fit, an unconstrained same-dataset RE fit, an external reference scale, and the cross-anchored configuration (Higgs $\psi$ combined with external gain ratio $r=\phi/\psi$). The cross-anchored case is the preferred jointly-grounded anchor. The Health-First case is subcritical in all setups, so its long-run pressure remains essentially zero.}
 \label{fig:taucompare}
 \end{figure}
 
@@ -300,17 +300,37 @@ The code now performs two relevant robustness checks:
 \end{enumerate}
 Across the $\phi$ sweep, the qualitative ordering of the three policy scenarios is preserved: engagement-first always yields the highest long-run pressure, moderate stays in the middle, and health-first stays lowest. That means the main policy ranking is not an artifact of one single baseline choice for $\phi$.
 
-This $\phi$ sweep is a \emph{local} robustness check around the baseline scenario block with $\psi$ held fixed at $0.1$, so it is designed to compare the current baseline $\phi=0.056$ against the external-reference scale $\phi\approx 0.1459$. It is not intended to reproduce the separate same-dataset RE-based fit, because that fit changes both $\phi$ and $\psi$ simultaneously and therefore sits on a different identification slice.
+This $\phi$ sweep is a \emph{local} robustness check around the baseline scenario block with $\psi$ held fixed at $0.1$, so it is designed to compare the current baseline $\phi=0.056$ against the external-reference scale $\phi\approx 0.1459$. It is not intended to uniquely identify the same-dataset RE-based fit, because that fit changes both $\phi$ and $\psi$ simultaneously and the Higgs reply proxy does not separately pin down the forcing and decay timescales.
 
-For the same-dataset proxy family, the present implementation selects the RE proxy as the most interpretable and best-supported same-dataset target. The displayed same-dataset fit is a decay-regularized RE-based fit, where the empirical reply-decay timescale is used as a soft anchor on $\psi$ rather than a hard constraint. In the current run this displayed RE-based fit gives approximately
+For the same-dataset proxy family, the present implementation selects the RE proxy as the most interpretable and best-supported same-dataset target. The report now shows \emph{two} same-dataset RE-based fits rather than pretending there is a unique calibrated pair. The decay-anchored fit uses the empirical reply-decay timescale and gives approximately
 \[
-\phi \approx 0.5298, \qquad \psi \approx 0.5296,
+\phi \approx 0.0613, \qquad \psi \approx 0.0409,
 \]
-with proxy-fit quality $R^2 \approx 0.6944$. For comparison, the raw unconstrained fit pushes toward
+with anchored proxy-fit quality $R^2 \approx 0.0952$. The unconstrained same-dataset fit gives
 \[
 \phi \approx 0.9596, \qquad \psi \approx 1.0000,
 \]
-while the pure decay anchor gives approximately $\psi_{\mathrm{decay}} \approx 0.0409$. The spread between these values is direct evidence that the pressure block is only partially identified. That is why the report treats the RE-based fit as a useful same-dataset proxy experiment rather than as a fully resolved toxicity calibration.
+with proxy-fit quality $R^2 \approx 0.7422$. The wide gap between these two same-dataset fits is itself the key identifiability result: the spread data and the reply proxy support the qualitative pressure story, but they do not uniquely determine one definitive $(\phi,\psi)$ pair under the present one-timescale pressure block.
+
+\textbf{Cross-anchored resolution.}
+This identification problem has a principled solution when an external toxicity reference is available.
+The key observation is that the normalized proxy shape identifies $\psi$ (the pressure decay
+timescale) via the post-peak decay slope of the RE activity, while the external toxicity rate
+anchors the steady-state gain ratio $r = \phi/\psi$ via $r = \tau_{\mathrm{ref}}/V^*_{\mathrm{mod}}$.
+Combining these two independent pieces of information gives the \emph{cross-anchored} configuration:
+\[
+\psi_{\mathrm{cross}} \approx 0.0409 \quad \text{(Higgs RE decay timescale)},
+\qquad
+r = \frac{\phi_{\mathrm{ext}}}{\psi_{\mathrm{default}}} \approx 1.46 \quad \text{(external reference)},
+\]
+\[
+\phi_{\mathrm{cross}} = r \cdot \psi_{\mathrm{cross}} \approx 1.46 \times 0.0409 \approx 0.0597.
+\]
+By construction, the cross-anchored equilibrium satisfies $\tau^* = r \cdot V^*_{\mathrm{mod}} \approx \tau_{\mathrm{ref}}$
+at the moderate scenario, matching the external toxicity reference, while its transient pressure dynamics
+follow the empirically estimated Higgs relaxation timescale rather than the arbitrary default $\psi=0.1$.
+The cross-anchored configuration is now included in the tau comparison figure as the preferred
+jointly-grounded anchor.
 
 \begin{figure}[H]
 \centering
@@ -324,7 +344,7 @@ The current report has several important limitations.
 \begin{enumerate}[leftmargin=1.5em]
     \item The spread calibration is based on one main Higgs event window.
     \item Higgs does not contain text, so the pressure block is proxy-grounded rather than directly text-calibrated.
-    \item The latent-pressure parameters $\phi$ and $\psi$ are only partially identified.
+    \item The latent-pressure parameters $\phi$ and $\psi$ are only partially identified from the same-dataset proxy alone. The cross-anchored configuration addresses this by combining the Higgs decay timescale with the external toxicity reference, but a formally identified latent observation model would require a richer multi-timescale data structure.
     \item The model assumes homogeneous mixing and deterministic dynamics.
     \item The threshold quantity used here comes from DFE linearization; a more formal next-generation-matrix derivation is still desirable for a journal version.
 \end{enumerate}

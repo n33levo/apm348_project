@@ -101,8 +101,16 @@ def main() -> None:
 
     selected_proxy_name = 'selected same-dataset proxy'
     selected_proxy = tau_proxy
-    if tau_configs and tau_configs.get('higgs_fit', {}).get('proxy_name') in tau_proxy_candidates:
-        selected_proxy_name = str(tau_configs['higgs_fit']['proxy_name'])
+    chosen_proxy_name = next(
+        (
+            str(cfg.get('proxy_name'))
+            for cfg in tau_configs.values()
+            if cfg.get('proxy_name') in tau_proxy_candidates
+        ),
+        None,
+    )
+    if chosen_proxy_name is not None:
+        selected_proxy_name = chosen_proxy_name
         selected_proxy = tau_proxy_candidates[selected_proxy_name]
 
     phi_candidates = [PHI]
@@ -213,12 +221,6 @@ def main() -> None:
                     f"decay R2={cfg['fit_diag']['psi_decay_r2']:.4f}, "
                     f"points={int(cfg['fit_diag']['decay_points'])}, "
                     f"anchored-fit R2={cfg['fit_diag']['r2_decay_fit']:.4f}"
-                )
-                print(
-                    f"{'':<10} regularized phi={cfg['fit_diag']['phi_regularized']:.4f}, "
-                    f"psi={cfg['fit_diag']['psi_regularized']:.4f}, "
-                    f"regularized R2={cfg['fit_diag']['r2_regularized']:.4f}, "
-                    f"penalty={cfg['fit_diag']['penalty_weight']:.4f}"
                 )
                 print(
                     f"{'':<10} unconstrained phi={cfg['fit_diag']['phi_unconstrained']:.4f}, "

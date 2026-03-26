@@ -4,7 +4,7 @@ import numpy as np
 from scipy.integrate import odeint
 
 from ivfs_calibration import fit_tau_proxy, simulate_tau_from_v, tau_fit_metrics
-from ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, SCENARIO_ALPHAS, W)
+from ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, SCENARIO_ALPHAS, TAU_PARAM_BOUNDS, W)
 
 
 def _ivfs_rhs(y, t, alpha, beta0, gamma0,
@@ -145,7 +145,7 @@ def build_tau_configurations(beta0: float,
                              mt_window: np.ndarray | None,
                              external_phi: float | None = None,
                              external_source: str | None = None) -> dict[str, dict]:
-    """assemble the baseline, Higgs-fit, and external tau-side configurations"""
+    """assemble baseline, same-dataset, and external tau-side configurations"""
     if not tau_proxy_candidates:
         return {}
 
@@ -206,21 +206,29 @@ def build_tau_configurations(beta0: float,
 
     add_config('current', 'Current fixed τ setup', PHI, PSI, '#1565C0')
 
-    phi_fit = best_proxy_fit['phi']
-    psi_fit = best_proxy_fit['psi']
-    fit_loss = best_proxy_fit['proxy_loss']
-    fit_r2 = best_proxy_fit['proxy_r2']
-    tau_fit = best_proxy_fit['tau_curve']
     fit_diag = best_proxy_fit['fit_diag']
-    t_scenario_fit, scenario_results_fit = run_scenarios(beta0, gamma0, phi=phi_fit, psi=psi_fit)
-    tau_configs['higgs_fit'] = {
-        'label': f'Decay-regularized Higgs fit ({best_proxy_name})',
-        'phi': phi_fit,
-        'psi': psi_fit,
+    add_config(
+        'higgs_decay',
+        f'Decay-anchored Higgs fit ({best_proxy_name})',
+        float(fit_diag['phi_decay_fit']),
+        float(fit_diag['psi_decay']),
+        '#EF6C00',
+    )
+
+    t_scenario_fit, scenario_results_fit = run_scenarios(
+        beta0,
+        gamma0,
+        phi=float(best_proxy_fit['phi']),
+        psi=float(best_proxy_fit['psi']),
+    )
+    tau_configs['higgs_unconstrained'] = {
+        'label': f'Unconstrained Higgs fit ({best_proxy_name})',
+        'phi': float(best_proxy_fit['phi']),
+        'psi': float(best_proxy_fit['psi']),
         'color': '#C62828',
-        'tau_curve': tau_fit,
-        'proxy_loss': fit_loss,
-        'proxy_r2': fit_r2,
+        'tau_curve': best_proxy_fit['tau_curve'],
+        'proxy_loss': float(best_proxy_fit['proxy_loss']),
+        'proxy_r2': float(best_proxy_fit['proxy_r2']),
         'fit_diag': fit_diag,
         'proxy_name': best_proxy_name,
         't_scenario': t_scenario_fit,
@@ -232,6 +240,26 @@ def build_tau_configurations(beta0: float,
         if external_source:
             ext_label = f'External scale ({external_source})'
         add_config('external', ext_label, float(external_phi), PSI, '#6A1B9A')
+
+    # Cross-anchored resolution of the identification problem.
+    # The tau equation dτ/dt = φV - ψτ has τ* = (φ/ψ)·V* at steady state.
+    # Fitting a normalized proxy only pins down ψ (timescale/shape); φ/ψ (level) is
+    # unidentified from shape alone.  We resolve this by combining two independent sources:
+    #   (1) ψ from the Higgs RE post-peak decay timescale  (internal, identifies dynamics)
+    #   (2) r = φ/ψ from the external toxicity reference   (external, identifies level)
+    # Then φ_cross = r · ψ_decay, giving a jointly grounded (φ, ψ) pair.
+    if external_phi is not None and np.isfinite(external_phi):
+        psi_cross = float(fit_diag.get('psi_decay', PSI))
+        # psi_decay must be above the lower bound to be a valid estimate
+        if psi_cross >= TAU_PARAM_BOUNDS[1][0] * 2.0:
+            # r = φ_ext / PSI because external_phi was computed as tau_ref * PSI / V*_mod
+            # so external_phi / PSI = tau_ref / V*_mod = r
+            r_gain = float(external_phi) / PSI
+            phi_cross = float(np.clip(r_gain * psi_cross, TAU_PARAM_BOUNDS[0][0], TAU_PARAM_BOUNDS[0][1]))
+            cross_label = 'Cross-anchored (Higgs \u03c8, ext. scale)'
+            if external_source:
+                cross_label = f'Cross-anchored (Higgs \u03c8 + {external_source})'
+            add_config('cross_anchored', cross_label, phi_cross, psi_cross, '#2E7D32')
 
     return tau_configs
 

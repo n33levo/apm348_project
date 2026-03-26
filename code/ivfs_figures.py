@@ -155,7 +155,7 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
                                selected_proxy_label: str,
                                re_window: np.ndarray | None,
                                tau_configs: dict[str, dict]) -> None:
-    """compare the latent-pressure proxy against the current, Higgs-fit, and external tau setups"""
+    """compare the selected proxy against baseline, same-dataset, and external tau setups"""
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 2, figsize=(14, 5.5))
     t_data = np.arange(len(selected_proxy))
@@ -175,17 +175,39 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
 
     scenario_order = list(SCENARIO_ALPHAS.keys())[::-1]
     x = np.arange(len(scenario_order), dtype=float)
-    width = 0.24
+    width = min(0.22, 0.72 / max(len(tau_configs), 1))
     offsets = np.linspace(-width, width, len(tau_configs))
     for offset, cfg in zip(offsets, tau_configs.values()):
         tau_vals = [max(0.0, float(cfg['scenario_results'][label]['tau_star'])) for label in scenario_order]
         axs[1].bar(x + offset, tau_vals, width=width, color=cfg['color'], alpha=0.9, label=cfg['label'])
+        zero_mask = [val < 1e-8 for val in tau_vals]
+        if any(zero_mask):
+            zero_x = [xpos + offset for xpos, is_zero in zip(x, zero_mask) if is_zero]
+            axs[1].plot(
+                zero_x,
+                [0.0] * len(zero_x),
+                linestyle='None',
+                marker='o',
+                markersize=4,
+                markerfacecolor='white',
+                markeredgewidth=1.2,
+                markeredgecolor=cfg['color'],
+                zorder=5,
+            )
     axs[1].set_xticks(x)
     axs[1].set_xticklabels(['Health-First', 'Moderate', 'Engagement-First'])
     axs[1].set_title('(b) Long-Run Discussion Pressure $\\tau^*$ by Policy')
     axs[1].set_xlabel('Policy scenario')
     axs[1].set_ylabel('$\\tau^*$')
     axs[1].set_ylim(bottom=0)
+    axs[1].annotate(
+        'Health-First is subcritical in all setups, so $\\tau^* \\approx 0$.',
+        xy=(x[0], 0.0), xycoords='data',
+        xytext=(x[0] - 0.35, 0.028), textcoords='data',
+        fontsize=8,
+        bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.8),
+        arrowprops=dict(arrowstyle='-', color='gray', linewidth=0.8),
+    )
     axs[1].legend(fontsize=8)
 
     fig.suptitle('APM348 Tau-Side Comparison (Latent Pressure Proxy + External Reference)', fontsize=13, fontweight='bold', y=1.02)

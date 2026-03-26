@@ -7,11 +7,10 @@ from pathlib import Path
 
 import numpy as np
 from scipy.integrate import odeint
-from scipy.optimize import minimize, minimize_scalar
+from scipy.optimize import minimize
 
 from ivfs_config import (FIT_WINDOW_HOURS, HIGGS_GZ, HIGGS_TXT, HIGGS_URL, IVF_PARAM_BOUNDS, PHI, PSI,
                          SMOOTH_WINDOW, TAU_DECAY_MIN_POINTS, TAU_PARAM_BOUNDS, TAU_PROXY_WEIGHTS,
-                         TAU_PSI_REGULARIZATION_SCALE,
                          ensure_layout)
 
 
@@ -378,47 +377,11 @@ def fit_tau_proxy_unconstrained(v_series: np.ndarray,
     return float(phi_fit), float(psi_fit), float(weighted_loss), float(r2), tau_fit
 
 
-def fit_tau_proxy_regularized(v_series: np.ndarray,
-                              tau_target: np.ndarray,
-                              weights: np.ndarray,
-                              psi_anchor: float,
-                              reference_loss: float,
-                              penalty_scale: float = TAU_PSI_REGULARIZATION_SCALE) -> tuple[float, float, float, float, np.ndarray, dict[str, float]]:
-    """fit phi with a log-scale penalty that keeps psi near the decay anchor"""
-    psi_lo, psi_hi = TAU_PARAM_BOUNDS[1]
-    psi_anchor_safe = float(np.clip(psi_anchor, psi_lo, psi_hi))
-    log_span = float(np.log(psi_hi / psi_anchor_safe)) if psi_hi > psi_anchor_safe else 1.0
-    penalty_weight = float(max(reference_loss, 1e-6) * penalty_scale / max(log_span ** 2, 1e-8))
-
-    def penalized_objective(log_psi: float) -> float:
-        psi_val = float(np.exp(log_psi))
-        _phi_fit, _tau_fit, loss_val, _r2 = fit_phi_for_fixed_psi(v_series, tau_target, psi_val, weights)
-        penalty = penalty_weight * float(np.log(psi_val / psi_anchor_safe) ** 2)
-        return float(loss_val + penalty)
-
-    res = minimize_scalar(
-        penalized_objective,
-        bounds=(float(np.log(psi_lo)), float(np.log(psi_hi))),
-        method='bounded',
-        options={'xatol': 1e-4},
-    )
-    psi_fit = float(np.clip(np.exp(float(res.x)), psi_lo, psi_hi))
-    phi_fit, tau_fit, weighted_loss, r2 = fit_phi_for_fixed_psi(v_series, tau_target, psi_fit, weights)
-    penalized_loss = float(weighted_loss + penalty_weight * np.log(psi_fit / psi_anchor_safe) ** 2)
-    diagnostics = {
-        'psi_anchor': psi_anchor_safe,
-        'penalty_weight': penalty_weight,
-        'penalty_scale': float(penalty_scale),
-        'penalized_loss': penalized_loss,
-    }
-    return float(phi_fit), float(psi_fit), float(weighted_loss), float(r2), tau_fit, diagnostics
-
-
 def fit_tau_proxy(v_series: np.ndarray,
                   tau_target: np.ndarray,
                   re_counts: np.ndarray | None = None,
                   mt_counts: np.ndarray | None = None) -> tuple[float, float, float, float, np.ndarray, dict[str, float]]:
-    """fit the chosen proxy while keeping a decay-regularized same-dataset estimate"""
+    """fit the chosen proxy directly, while also recording a decay-based psi diagnostic"""
     v_arr = np.asarray(v_series, dtype=float)
     tau_target = np.asarray(tau_target, dtype=float)
     if re_counts is not None:
@@ -432,17 +395,10 @@ def fit_tau_proxy(v_series: np.ndarray,
 
     psi_anchor, decay_info = estimate_psi_from_decay(tau_target)
     phi_decay, tau_fit_decay, loss_decay, r2_decay = fit_phi_for_fixed_psi(v_arr, tau_target, float(psi_anchor), weights)
-    phi_unconstrained, psi_unconstrained, loss_unconstrained, r2_unconstrained, tau_unconstrained = fit_tau_proxy_unconstrained(
+    phi_fit, psi_fit, weighted_loss, r2, tau_fit = fit_tau_proxy_unconstrained(
         v_arr,
         tau_target,
         weights,
-    )
-    phi_fit, psi_fit, weighted_loss, r2, tau_fit, reg_diag = fit_tau_proxy_regularized(
-        v_arr,
-        tau_target,
-        weights,
-        float(psi_anchor),
-        float(loss_unconstrained),
     )
     diagnostics = {
         'psi_decay': float(psi_anchor),
@@ -451,18 +407,12 @@ def fit_tau_proxy(v_series: np.ndarray,
         'phi_decay_fit': float(phi_decay),
         'loss_decay_fit': float(loss_decay),
         'r2_decay_fit': float(r2_decay),
-        'phi_unconstrained': float(phi_unconstrained),
-        'psi_unconstrained': float(psi_unconstrained),
-        'loss_unconstrained': float(loss_unconstrained),
-        'r2_unconstrained': float(r2_unconstrained),
-        'phi_regularized': float(phi_fit),
-        'psi_regularized': float(psi_fit),
-        'loss_regularized': float(weighted_loss),
-        'r2_regularized': float(r2),
-        'tau_fit_mode': 2.0,
+        'phi_unconstrained': float(phi_fit),
+        'psi_unconstrained': float(psi_fit),
+        'loss_unconstrained': float(weighted_loss),
+        'r2_unconstrained': float(r2),
         'fit_mode': 1.0,
     }
-    diagnostics.update(reg_diag)
     return phi_fit, psi_fit, weighted_loss, r2, tau_fit, diagnostics
 
 
