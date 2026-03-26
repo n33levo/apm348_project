@@ -122,9 +122,9 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
         axs[1, 0].annotate(
             f'RE events in window: {re_total:,}\n'
             f'corr(RE, RT) over fit window = {re_corr:.4f}',
-            xy=(0.04, 0.84), xycoords='axes fraction', fontsize=9,
+            xy=(0.56, 0.34), xycoords='axes fraction', fontsize=9,
             bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
-        axs[1, 0].legend(fontsize=8, loc='lower right')
+        axs[1, 0].legend(fontsize=8, loc='upper right', bbox_to_anchor=(0.97, 0.97))
     else:
         axs[1, 0].text(0.5, 0.5, 'No RE data available', transform=axs[1, 0].transAxes,
                        ha='center', va='center', fontsize=12, color='gray')
@@ -175,9 +175,12 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
 
     scenario_order = list(SCENARIO_ALPHAS.keys())[::-1]
     x = np.arange(len(scenario_order), dtype=float)
-    width = min(0.22, 0.72 / max(len(tau_configs), 1))
-    offsets = np.linspace(-width, width, len(tau_configs))
-    for offset, cfg in zip(offsets, tau_configs.values()):
+    bar_items = list(tau_configs.items())
+    if 'external' in tau_configs and 'reference_constrained' in tau_configs:
+        bar_items = [(key, cfg) for key, cfg in tau_configs.items() if key != 'reference_constrained']
+    width = min(0.18, 0.72 / max(len(bar_items), 1))
+    offsets = (np.arange(len(bar_items), dtype=float) - 0.5 * (len(bar_items) - 1)) * width
+    for offset, (_key, cfg) in zip(offsets, bar_items):
         tau_vals = [max(0.0, float(cfg['scenario_results'][label]['tau_star'])) for label in scenario_order]
         axs[1].bar(x + offset, tau_vals, width=width, color=cfg['color'], alpha=0.9, label=cfg['label'])
         zero_mask = [val < 1e-8 for val in tau_vals]
@@ -201,21 +204,22 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
     axs[1].set_ylabel('$\\tau^*$')
     axs[1].set_ylim(bottom=0)
     axs[1].annotate(
-        'Health-First is subcritical in all setups, so $\\tau^* \\approx 0$.',
+        'Health-First is subcritical in all\nsetups, so $\\tau^* \\approx 0$.',
         xy=(x[0], 0.0), xycoords='data',
-        xytext=(x[0] - 0.35, 0.028), textcoords='data',
+        xytext=(x[0] - 0.45, 0.028), textcoords='data',
         fontsize=8,
+        ha='left',
         bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.8),
         arrowprops=dict(arrowstyle='-', color='gray', linewidth=0.8),
     )
     if 'external' in tau_configs and 'reference_constrained' in tau_configs:
         axs[1].text(
-            0.99, 0.97,
-            'External and ref.-constrained share\nthe same $\\tau^*$ (same $\\phi/\\psi$).\nDifference is transient speed only\n(see panel a).',
-            transform=axs[1].transAxes, fontsize=7, ha='right', va='top',
+            0.56, 0.96,
+            'Ref.-constrained is omitted in panel (b):\nit shares the same long-run $\\tau^*$ as external\n(same $\\phi/\\psi$) and differs only in panel (a).',
+            transform=axs[1].transAxes, fontsize=7, ha='center', va='top',
             bbox=dict(boxstyle='round,pad=0.3', fc='lightyellow', alpha=0.85),
         )
-    axs[1].legend(fontsize=8)
+    axs[1].legend(fontsize=8, loc='upper left', bbox_to_anchor=(0.0, 0.86))
 
     fig.suptitle('APM348 Tau-Side Comparison (Latent Pressure Proxy + External Reference)', fontsize=13, fontweight='bold', y=1.02)
     fig.tight_layout(pad=2)

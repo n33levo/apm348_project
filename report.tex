@@ -171,7 +171,7 @@ The main spread diagnostics from the current implementation are:
     \item tail mean bias: $+0.0043$
 \end{itemize}
 Because the calibration window itself is the full 100-hour fitting window, the fit-window and full-window $R^2$ values coincide in the current run.
-The spread benchmark against SIR also favors the current IVF helper model on the Higgs window. The repository additionally contains parametric bootstrap intervals and local profile-likelihood curves, both of which support practical identifiability of the spread parameters.
+The spread benchmark against SIR also favors the current IVF helper model on the Higgs window. The repository additionally contains parametric bootstrap intervals and local profile-likelihood curves, both of which support practical identifiability of the spread parameters. To check whether the burst-decay shape is specific to the main spike only, the repository now also refits the reduced IVF helper model on three additional active 48-hour Higgs windows. Those appendix fits achieve $R^2$ values between roughly $0.69$ and $0.95$, which supports local robustness of the helper-model shape even though the shorter-window parameter estimates shift substantially across phases of the cascade.
 
 Figure~\ref{fig:cal} shows the calibration diagnostics. Figure~\ref{fig:taucompare} shows the same-dataset pressure-proxy comparison. Figure~\ref{fig:results} shows the main policy results.
 
@@ -185,7 +185,7 @@ Figure~\ref{fig:cal} shows the calibration diagnostics. Figure~\ref{fig:taucompa
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
-\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy. Panel~(a) compares the proxy against the baseline pressure block, two same-dataset Higgs fits (decay-anchored and unconstrained), an external reference scale, and the reference-constrained configuration. The external-scale and reference-constrained curves share the same $\tau^*$ by construction (same $\phi/\psi$) and differ only in transient speed, as annotated in panel~(b). The Health-First case is subcritical in all setups, so its long-run pressure remains essentially zero.}
+\caption{Latent-pressure proxy comparison. In the current run the black reference curve is the selected RE proxy. Panel~(a) compares the proxy against the baseline pressure block, two same-dataset Higgs fits (decay-anchored and unconstrained), an external reference scale, and the reference-constrained configuration. In panel~(b), the reference-constrained setup is omitted because it shares the same long-run $\tau^*$ as the external-scale setup (same $\phi/\psi$) and differs only in transient speed. The Health-First case is subcritical in all setups, so its long-run pressure remains essentially zero.}
 \label{fig:taucompare}
 \end{figure}
 
@@ -350,7 +350,7 @@ Closing this gap would require either a dataset with both spread data and direct
 toxicity labels, or a multi-timescale $\tau$ model.
 For the present course report, the reference-constrained configuration is the most defensible
 single-point answer: it satisfies the external reference and finds the best proxy dynamics
-consistent with that constraint.
+consistent with that constraint. Appendix~B summarizes this identification split explicitly: Higgs identifies the spread block strongly and the pressure shape only partially, while the external reference fixes the pressure scale ratio rather than a unique $(\phi,\psi)$ pair.
 
 \begin{figure}[H]
 \centering
@@ -381,8 +381,45 @@ python code/ivfs_validation.py
 python code/equilibrium_analysis.py
 python code/benchmark_models.py
 python code/toxicity_calibration.py
+python code/higgs_window_validation.py
 \end{verbatim}
 The main outputs used in this report are written to the \texttt{assets/} directory.
+
+\section{Identification note for the pressure block}
+The current empirical package identifies different pieces of the model with different strengths:
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{Higgs retweet counts} strongly identify the spread-side helper parameters $(\beta_0,\gamma_0,\lambda_0,d_\lambda,V_0)$ on the main 100-hour window.
+    \item \textbf{Higgs reply activity} partially identifies the pressure \emph{shape}: it distinguishes better and worse relaxation timescales $\psi$, but only through a normalized proxy and therefore without fixing an absolute pressure scale.
+    \item \textbf{The external Jigsaw reference} identifies the steady-state gain ratio $r=\phi/\psi=\tau_{\mathrm{ref}}/V^*_{\mathrm{mod}}$, so it constrains $(\phi,\psi)$ to a line rather than to one point.
+\end{itemize}
+The reference-constrained fit combines the second and third items in the most disciplined way currently available: it restricts $(\phi,\psi)$ to the externally anchored line $\phi=r\psi$ and then chooses the $\psi$ on that line that best matches the same-dataset reply proxy. What remains unresolved is the gap between that constrained optimum ($R^2\approx 0.41$) and the unconstrained same-dataset optimum ($R^2\approx 0.74$). That gap is not a plotting issue and not an optimization bug; it is the substantive identification limit of the present one-timescale pressure block.
+
+\section{Additional Higgs active-window validation}
+Because the Higgs record spans only 168 hours, independent 100-hour windows are not available. Instead, the repository now validates the reduced IVF helper model on three additional active 48-hour windows selected from the same record. These windows overlap, so they are not independent event replications; rather, they test whether the burst-decay helper model continues to describe different active phases of the cascade beyond the main 100-hour calibration window.
+
+\begin{table}[H]
+\centering
+\caption{Additional active-window Higgs validation for the reduced IVF helper model.}
+\label{tab:windowval}
+\begin{tabular}{cccc}
+    oprule
+Window (hours) & Peak RT count & Local fit $R^2$ & Interpretation \\
+\midrule
+76--123 & 30,602 & 0.9514 & main-spike local refit \\
+104--151 & 3,033 & 0.7170 & secondary active tail \\
+120--167 & 1,498 & 0.6926 & late active tail \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These additional fits show that the reduced IVF helper model continues to capture the local burst-and-decay shape well on later active windows, even though the fitted parameters shift across windows. That is the right interpretation for the present project: the helper model is a good local phenomenological fit to active cascade phases, but the most defensible global parameter estimates remain those from the main 100-hour calibration window used for the policy analysis.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{assets/higgs_window_validation.png}
+\caption{Additional 48-hour active-window validation for the reduced IVF helper model. The local $R^2$ values remain strong on later active windows, supporting the burst-decay shape beyond the main calibration window.}
+\label{fig:windowval}
+\end{figure}
 
 \section{Immediate research-paper upgrades}
 The clearest next upgrades are:
@@ -390,7 +427,7 @@ The clearest next upgrades are:
     \item a full next-generation-matrix derivation of $\mathcal R_0$;
     \item theorem-level local and global stability results;
     \item a latent observation model for $\tau$ with RE and MT as noisy observables;
-    \item multi-cascade spread validation beyond the main Higgs spike.
+    \item independent-event spread validation beyond the current 168-hour Higgs record.
 \end{enumerate}
 
 \begingroup
