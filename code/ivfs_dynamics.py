@@ -45,7 +45,7 @@ def run_scenarios(beta0: float,
                   scenario_alphas: dict[str, float] | None = None):
     if scenario_alphas is None:
         scenario_alphas = SCENARIO_ALPHAS
-    t = np.linspace(0, 500, 5001)
+    t = np.linspace(0, 2000, 10001)
     a_loss = DELTA + MU_C
     u_dfe = NU / LAMBDA_U
     i_dfe = RHO * u_dfe / ((1.0 + u_dfe) * a_loss)

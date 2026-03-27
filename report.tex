@@ -604,7 +604,7 @@ We calibrate the spread block using a reduced three-compartment IVF helper model
 \[
 \lambda(t) = \lambda_0\, e^{-d_\lambda t}.
 \]
-This seed term accounts for the external injection of content into the Higgs cascade (e.g., from news coverage) and improves the fit of the decay tail. The helper also sets $\delta = 0$ (no moderation attrition); the full model's DFE and equilibrium calculations restore the correct $(\delta + \mu_c)$ attrition. The helper model has five free parameters: $\beta_0$, $\gamma_0$, $\lambda_0$, $d_\lambda$, and the initial viral volume $V_0$.
+This seed term accounts for the external injection of content into the Higgs cascade (e.g., from news coverage) and improves the fit of the decay tail. The helper also sets $\delta = 0$ (no moderation attrition); the full model's DFE and equilibrium calculations restore the correct $(\delta + \mu_c)$ attrition. The helper model has five free parameters: $\beta_0$, $\gamma_0$, $\lambda_0$, $d_\lambda$, and the initial viral volume $V_0$. The initial condition is normalised so that $I(0) + V(0) = 1$ with $F(0) = 0$; because the output $V(t)$ is subsequently normalised by its peak value, this choice does not affect the fitted parameters.
 
 The optimization uses a bounded Powell search with warm starts, minimizing a weighted sum of squared errors that emphasizes the spike region. The fitted parameter values are:
 \begin{align*}
@@ -840,7 +840,7 @@ The local $R^2$ values range from $0.69$ to $0.95$, which shows that the burst-a
 We identify the following limitations of the present model and analysis. We organize them by severity, starting with the most consequential.
 
 \begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Partial identification of the pressure block.} The pressure parameters $(\phi, \psi)$ are not uniquely determined by the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially but not completely.
+    \item \textbf{Partial identification of the pressure block.} The pressure parameters $(\phi, \psi)$ are not uniquely determined by the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially but not completely. Moreover, the boundary-constrained fit (Table~\ref{tab:pressure_configs}) reaches the upper bound $\psi = 1.0$ imposed by \texttt{TAU\_PARAM\_BOUNDS}; the true unconstrained optimum may lie at $\psi > 1$, and relaxing this bound is a natural next step once independent pressure data become available.
 
     \item \textbf{Single-event spread calibration.} The spread model is fitted to one main event window from the Higgs dataset. While the multi-window validation (Table~\ref{tab:windowval}) shows that the model shape is robust, the parameter values are specific to this particular cascade. Calibration on additional independent events would strengthen the empirical foundation.
 
