@@ -9,7 +9,7 @@ PHI_SENS_FIGURE_PATH = ASSETS_DIR / 'phi_sensitivity.png'
 TAU_COMPARE_FIGURE_PATH = ASSETS_DIR / 'tau_proxy_comparison.png'
 PROFILE_FIGURE_PATH = ASSETS_DIR / 'profile_likelihood.png'
 
-# --- model params (shared across files) ---
+# Model params (shared across files)
 KAPPA = 0.8
 ETA = 0.3
 PHI = 0.056
@@ -26,7 +26,7 @@ SCENARIO_ALPHAS = {
     'Health-First (alpha=0.2)': 0.2,
 }
 
-# --- calibration / plotting constants ---
+# Calibration / plotting constants
 FIT_WINDOW_HOURS = 100
 DISPLAY_WINDOW_HOURS = 50
 SPIKE_WINDOW_HOURS = 35

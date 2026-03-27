@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Draw the IVFS structure diagram with orthogonal routing for cross-links."""
+"""Draw the IVFS structure diagram with orthogonal routing for the cross-links"""
 
 import sys
 from pathlib import Path
@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.path import Path as MplPath
 
 from common import ASSETS_DIR, ensure_layout
 
@@ -95,7 +96,7 @@ def straight(ax, start, end, txt, txt_xy, color, lw=2.0, fs=10):
 
 
 def routed(ax, pts, txt, txt_xy, color, lw=2.0, fs=10):
-    """Orthogonal multi-segment arrow: lines + arrowhead on last segment."""
+    """Draw an orthogonal multi-segment arrow with the arrowhead on the last segment"""
     for i in range(len(pts) - 2):
         ax.plot([pts[i][0], pts[i+1][0]], [pts[i][1], pts[i+1][1]],
                 color=color, linewidth=lw, solid_capstyle='round', zorder=5)
@@ -126,7 +127,7 @@ def main():
     for key in C:
         draw_box(ax, key, names[key])
 
-    # === SIMPLE STRAIGHT ARROWS ===============================================
+    # Straight arrows
 
     # I -> V
     straight(ax, edge('I', 'r'), edge('V', 'l'),
@@ -134,17 +135,16 @@ def main():
     # V -> F
     straight(ax, edge('V', 'r'), edge('F', 'l'),
              r'$\gamma_{\mathrm{eff}}V$', (7.0, 5.88), CLR['spread'])
-    # V -> S  (moderation: delta*I diverts content from I to S)
-    # Actually I -> S, but the original label says delta*I
+    # I -> S  (Moderation removes content to suppressed)
     straight(ax, edge('I', 'b'), edge('S', 't'),
-             r'$\delta I$', (3.1, 3.85), CLR['suppress'])
-    # tau -> U  (right side of the pressure column)
+             r'$\delta I$', (2.8, 3.85), CLR['suppress'])
+    # tau -> U
     straight(ax, edge('T', 'b', 0.65), edge('U', 't', 0.65),
              r'$\lambda_u(1+w\tau)U$', (12.15, 3.85), CLR['user'])
-    # nu -> U  (external inflow from below)
+    # Nu -> U  (external inflow)
     straight(ax, (C['U'][0], 0.65), edge('U', 'b'),
              r'$\nu$', (C['U'][0] + 0.50, 1.05), CLR['user'])
-    # tau modulates V->F rate (feedback arrow targets midpoint of V->F edge)
+    # Tau modulating the V->F fatigue rate
     vf_mid = ((C['V'][0] + BOX_W / 2 + C['F'][0] - BOX_W / 2) / 2,
               C['V'][1] - BOX_H / 2)  # bottom of V->F midpoint
     routed(ax,
@@ -155,10 +155,9 @@ def main():
             vf_mid],
            r'$\gamma_0(1+\eta\tau)$', (9.1, 4.15), CLR['fb'])
 
-    # === ROUTED ARROWS (explicit orthogonal waypoints) ========================
+    # Routed arrows
 
-    # phi*V :  V -> tau  (HIGH route, above all boxes)
-    # V top -> up to y=7.2 -> right to tau_cx -> down into tau top
+    # phi*V :  V -> tau  (going above all boxes)
     routed(ax,
            [edge('V', 't'),
             (C['V'][0], 7.2),
@@ -166,8 +165,7 @@ def main():
             edge('T', 't')],
            r'$\phi V$', (8.35, 7.45), CLR['gen'])
 
-    # alpha*beta_0*(1+kappa*tau) :  tau -> V  (LOW route, below the box row)
-    # tau bottom -> down to y=3.8 -> left to V_bottom_x -> up into V bottom
+    # alpha*beta_0*(1+kappa*tau) :  tau -> V  (going below the box row)
     tau_bx = edge('T', 'b', 0.35)[0]
     v_bx = edge('V', 'b', 0.65)[0]
     routed(ax,
@@ -177,17 +175,14 @@ def main():
             edge('V', 'b', 0.65)],
            r'$\alpha\beta_0(1+\kappa\tau)$', (8.35, 3.55), CLR['fb'])
 
-    # rho*U/(1+U) :  U -> I  (route BELOW S: U bottom -> down -> left -> up to I left)
-    u_bot = edge('U', 'b', 0.25)
-    i_left = edge('I', 'l', 0.30)
-    routed(ax,
-           [u_bot,
-            (u_bot[0], 0.85),
-            (i_left[0], 0.85),
-            i_left],
-           r'$\rho U/(1+U)$', (6.5, 0.60), CLR['recruit'])
+    # rho*U/(1+U) :  U -> I  (simple arc through the middle gap)
+    ax.annotate('', xy=edge('I', 'b', 0.85), xytext=edge('U', 'l', 0.5),
+                arrowprops=dict(arrowstyle='-|>', color=CLR['recruit'], lw=2.0,
+                                connectionstyle='arc3,rad=-0.20'),
+                zorder=5)
+    label(ax, (6.0, 2.15), r'$\rho U/(1+U)$', CLR['recruit'])
 
-    # === CAPTION ==============================================================
+    # Caption
     ax.text(
         7.0, 0.25,
         r'Deterministic compartmental ODE.  '

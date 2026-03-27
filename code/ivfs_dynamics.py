@@ -9,7 +9,7 @@ from ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, S
 
 def _ivfs_rhs(y, t, alpha, beta0, gamma0,
               kappa, eta, phi, psi, rho, lambda_u, nu, mu_c, delta, w):
-    """the full 6-state ODE rhs (I, V, F, S, tau, U)"""
+    """The full 6-state ODE right-hand side (I, V, F, S, tau, U)"""
     i_val, v_val, f_val, s_val, tau, u_val = y
 
     i_pos = max(i_val, 0.0)
@@ -33,7 +33,7 @@ def _ivfs_rhs(y, t, alpha, beta0, gamma0,
 
 
 def full_ivfs_ode(y, t, alpha, beta0, gamma0):
-    """wrapper that plugs in the default params"""
+    """Wrap _ivfs_rhs with the default params plugged in"""
     return _ivfs_rhs(y, t, alpha, beta0, gamma0,
                      KAPPA, ETA, PHI, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
@@ -102,7 +102,7 @@ def run_continuation(beta0: float,
 
 
 def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
-    """Central finite-difference sensitivity indices (average of +/-1% perturbations)."""
+    """Compute central finite-difference sensitivity indices (averaging +/-1% perturbations)"""
     a_loss = DELTA + MU_C
     u_dfe = NU / LAMBDA_U
     i_dfe = RHO * u_dfe / ((1.0 + u_dfe) * a_loss)
@@ -116,12 +116,12 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
     v_base, tau_base, u_base = get_eq(full_ivfs_ode)
 
     def _elasticity(v_lo, v_hi, base, dp_frac=0.02):
-        """Central-difference elasticity: S = (x_hi - x_lo) / (2*dp) * (p/x_base)."""
+        """Central-difference elasticity: S = (x_hi - x_lo) / (2*dp) * (p/x_base)"""
         if abs(base) < 1e-12:
             return 0.0
         return ((v_hi - v_lo) / base) / dp_frac
 
-    # --- parameters passed inside the ODE (kappa, eta, phi, psi, w) ---
+    # Parameters passed inside the ODE (kappa, eta, phi, psi, w)
     internal_params = {'kappa': KAPPA, 'eta': ETA, 'phi': PHI, 'psi': PSI, 'w': W}
     rows = []
     for name, base_val in internal_params.items():
@@ -145,7 +145,7 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
         u_si = _elasticity(u_lo, u_hi, u_base)
         rows.append((name, v_si, tau_si, u_si))
 
-    # --- parameters passed as ODE args (alpha, beta0, gamma0) ---
+    # Parameters passed as ODE args (alpha, beta0, gamma0)
     arg_params = {'alpha': alpha, 'beta0': beta0, 'gamma0': gamma0}
     for name, base_val in arg_params.items():
         results = {}
@@ -174,7 +174,7 @@ def build_tau_configurations(beta0: float,
                              mt_window: np.ndarray | None,
                              external_phi: float | None = None,
                              external_source: str | None = None) -> dict[str, dict]:
-    """assemble baseline, same-dataset, and external tau-side configurations"""
+    """Assemble baseline, same-dataset, and external tau-side configurations"""
     if not tau_proxy_candidates:
         return {}
 
@@ -270,17 +270,10 @@ def build_tau_configurations(beta0: float,
             ext_label = f'External scale ({external_source})'
         add_config('external', ext_label, float(external_phi), PSI, '#6A1B9A')
 
-    # Reference-constrained fit.
-    # The external reference fixes r = phi/psi = tau_ref / V*_moderate, which
-    # constrains (phi, psi) to the line phi = r*psi.  Any point on that line
-    # produces the same long-run tau* = r*V* to leading order, so the external
-    # and reference-constrained configs share nearly identical long-run policy
-    # outcomes (the residual difference is second-order via the kappa*tau feedback).
-    # Within the constraint, psi is the single free parameter; we optimise it
-    # over [psi_lo, phi_hi/r] for the best weighted proxy-fit quality.
-    # This is strictly better than the earlier ad hoc cross-anchoring, which
-    # picked psi from the post-peak decay slope and did not search the constraint
-    # line for the best-fitting point.
+    # Reference-constrained fit
+    # The external reference fixes r = phi/psi, so any point on that line
+    # gives the same long-run tau*. I'm optimising psi along the constraint
+    # for the best proxy fit.
     if external_phi is not None and np.isfinite(external_phi):
         r_gain = float(external_phi) / PSI
         re_w_arr = np.asarray(re_window, dtype=float) if re_window is not None else None
@@ -317,7 +310,7 @@ def run_phi_sensitivity(beta0: float,
                         gamma0: float,
                         phi_grid: np.ndarray,
                         scenario_alphas: dict[str, float] | None = None):
-    """sweep PHI while holding PSI fixed to show how robust the policy ordering is"""
+    """Sweep PHI while holding PSI fixed to check how robust the policy ordering is"""
     if scenario_alphas is None:
         scenario_alphas = SCENARIO_ALPHAS
 
@@ -358,7 +351,7 @@ def run_phi_sensitivity(beta0: float,
 
 def find_W_for_interior_Emax(beta0: float, gamma0: float,
                              w_grid: np.ndarray | None = None):
-    """scan W values to see if E* ever peaks at an interior alpha"""
+    """Scan W values to see if E* ever peaks at an interior alpha"""
     if w_grid is None:
         w_grid = np.linspace(5, 80, 50)
     a_loss = DELTA + MU_C

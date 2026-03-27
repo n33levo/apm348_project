@@ -1,8 +1,8 @@
 """
-Generate supplementary figures for early report sections:
-  1. Higgs raw-data overview (Background, Section 1)
-  2. R_0 sensitivity bar chart  (Analysis, Section 6)
-  3. Bifurcation schematic       (Analysis, Section 6)
+Generate supplementary figures for the early report sections:
+  1. Higgs raw-data overview (background, section 1)
+  2. Sensitivity bar chart (analysis, section 6)
+  3. Bifurcation schematic (analysis, section 6)
 """
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ from ivfs_config import (
 
 ensure_layout()
 
-# ── helper: load Higgs activity data ──────────────────────────
+# Load Higgs activity data
 def _load_higgs_activity():
-    """Return hourly RT, MT, RE counts over the full 168-hour window."""
+    """Return hourly RT, MT, RE counts over the full 168-hour window"""
     timestamps = []
     kinds = []
     with open(HIGGS_TXT, 'r') as f:
@@ -48,7 +48,7 @@ def _load_higgs_activity():
     return np.arange(max_h), rt, re, mt
 
 
-# ━━━━ Figure 1: Higgs Raw-Data Overview ━━━━━━━━━━━━━━━━━━━━━━
+# Figure 1: Higgs raw-data overview
 def make_higgs_overview():
     hrs, rt, re, mt = _load_higgs_activity()
 
@@ -91,9 +91,9 @@ def make_higgs_overview():
     print(f'[extra_figures] saved {out}')
 
 
-# ━━━━ Figure 2: R₀ Sensitivity Bar Chart ━━━━━━━━━━━━━━━━━━━━
+# Figure 2: sensitivity bar chart
 def make_sensitivity_bar():
-    """Bar chart of S(R0, p) for key parameters."""
+    """Plot S(R0, p) bar chart for the key parameters"""
     # Analytical sensitivity of R0
     gamma0_cal = 0.3095       # calibrated value from report
     beta0_cal  = 0.3184
@@ -150,9 +150,9 @@ def make_sensitivity_bar():
     print(f'[extra_figures] saved {out}')
 
 
-# ━━━━ Figure 3: R₀ vs α bifurcation diagram ━━━━━━━━━━━━━━━━━
+# Figure 3: R0 vs alpha bifurcation diagram
 def make_r0_bifurcation():
-    """Show R0 and V* as functions of alpha, marking the critical threshold."""
+    """Show R0 and V* as functions of alpha, marking the critical threshold"""
     gamma0 = 0.3095
     beta0  = 0.3184
 

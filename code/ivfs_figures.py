@@ -155,7 +155,7 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
                                selected_proxy_label: str,
                                re_window: np.ndarray | None,
                                tau_configs: dict[str, dict]) -> None:
-    """compare the selected proxy against baseline, same-dataset, and external tau setups"""
+    """Compare the selected proxy against baseline, same-dataset, and external tau setups"""
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 2, figsize=(14, 5.5))
     t_data = np.arange(len(selected_proxy))
@@ -307,7 +307,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
                                 current_phi: float,
                                 external_phi: float | None = None,
                                 external_source: str | None = None) -> None:
-    """save a small robustness figure for the toxicity coupling PHI"""
+    """Save a small robustness figure for the toxicity coupling PHI"""
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 2, figsize=(12.5, 4.8))
 
@@ -348,7 +348,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
 
 def plot_profile(beta_grid, profile_beta, gamma_grid, profile_gamma,
                  beta0_best, gamma0_best) -> None:
-    """save the profile likelihood plots"""
+    """Save the profile likelihood plots"""
     plt.style.use('ggplot')
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
     beta_excess = profile_beta - float(np.min(profile_beta))

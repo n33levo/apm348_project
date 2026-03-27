@@ -15,7 +15,7 @@ from ivfs_config import (FIT_WINDOW_HOURS, HIGGS_GZ, HIGGS_TXT, HIGGS_URL, IVF_P
 
 
 def ensure_dataset() -> None:
-    """download + unzip the higgs data if we don't have it yet"""
+    """Download and unzip the Higgs data if we don't have it yet"""
     ensure_layout()
 
     if HIGGS_TXT.exists():
@@ -34,7 +34,7 @@ def ensure_dataset() -> None:
 
 
 def parse_activity_file(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
-    """read the activity file and grab RT + RE + MT timestamps"""
+    """Read the activity file and grab RT + RE + MT timestamps"""
     rt_timestamps: list[int] = []
     re_timestamps: list[int] = []
     mt_timestamps: list[int] = []
@@ -63,7 +63,7 @@ def parse_activity_file(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray,
 def build_hourly_curve(rt_timestamps: np.ndarray,
                        re_timestamps: np.ndarray | None = None,
                        mt_timestamps: np.ndarray | None = None) -> dict:
-    """bin RT/RE/MT into hours and build the calibration + pressure-proxy windows"""
+    """Bin RT/RE/MT into hours and build the calibration + pressure-proxy windows"""
     t0 = int(rt_timestamps.min())
     hours = (rt_timestamps - t0) / 3600.0
     max_hour = int(np.ceil(hours.max()))
@@ -126,7 +126,7 @@ def build_hourly_curve(rt_timestamps: np.ndarray,
 
 
 def moving_average(series: np.ndarray, window: int = SMOOTH_WINDOW) -> np.ndarray:
-    """simple centered moving average for plotting trend vs raw hourly noise"""
+    """Simple centered moving average for plotting the trend vs raw hourly noise"""
     if window <= 1:
         return series.copy()
     kernel = np.ones(window, dtype=float) / float(window)
@@ -174,7 +174,7 @@ def simulate_basic_ivf(beta: float,
                        v0: float,
                        n_steps: int,
                        mu: float = 0.01) -> np.ndarray:
-    """simulate the baseline IVF fit with a decaying exogenous seed term"""
+    """Simulate the baseline IVF fit with a decaying exogenous seed term"""
     def ivf_ode(y, t, beta_val, gamma_val, mu_val, lam0_val, lam_decay_val):
         i_val, v_val, f_val = y
         lam_t = lam0_val * np.exp(-lam_decay_val * t)
@@ -194,7 +194,7 @@ def simulate_basic_ivf(beta: float,
 def fit_basic_ivf(v_empirical_norm: np.ndarray,
                   window_counts: np.ndarray | None = None,
                   n_steps: int | None = None) -> tuple[float, float, float, float, float, float, np.ndarray]:
-    """fit IVF to the full Higgs window with a decaying exogenous tail term"""
+    """Fit IVF to the full Higgs window with a decaying exogenous tail term"""
     if window_counts is not None:
         weights = 1.0 / (np.sqrt(window_counts) + 1.0)
     else:
@@ -255,7 +255,7 @@ def simulate_tau_from_v(v_series: np.ndarray,
                         phi: float,
                         psi: float,
                         tau0: float = 0.0) -> np.ndarray:
-    """propagate tau using the fitted V(t) curve as an exogenous input"""
+    """Propagate tau using the fitted V(t) curve as an exogenous input"""
     v_arr = np.asarray(v_series, dtype=float)
     tau = np.zeros_like(v_arr, dtype=float)
     if tau.size == 0:
@@ -284,7 +284,7 @@ def tau_fit_metrics(tau_target: np.ndarray,
 
 def estimate_psi_from_decay(tau_target: np.ndarray,
                             min_points: int = TAU_DECAY_MIN_POINTS) -> tuple[float, dict[str, float]]:
-    """estimate psi from the post-peak decay timescale of the proxy"""
+    """Estimate psi from the post-peak decay timescale of the proxy"""
     tau_arr = np.asarray(tau_target, dtype=float)
     if tau_arr.size == 0:
         return PSI, {'peak_index': 0.0, 'n_decay_points': 0.0, 'decay_r2': 0.0}
@@ -319,7 +319,7 @@ def fit_phi_for_fixed_psi(v_series: np.ndarray,
                           tau_target: np.ndarray,
                           psi: float,
                           weights: np.ndarray | None = None) -> tuple[float, np.ndarray, float, float]:
-    """with psi fixed, fit phi by weighted least squares"""
+    """With psi fixed, fit phi by weighted least squares"""
     v_arr = np.asarray(v_series, dtype=float)
     tau_target_arr = np.asarray(tau_target, dtype=float)
     tau0 = float(max(tau_target_arr[0], 0.0)) if tau_target_arr.size else 0.0
@@ -344,7 +344,7 @@ def fit_phi_for_fixed_psi(v_series: np.ndarray,
 def fit_tau_proxy_unconstrained(v_series: np.ndarray,
                                 tau_target: np.ndarray,
                                 weights: np.ndarray) -> tuple[float, float, float, float, np.ndarray]:
-    """fit phi and psi directly to the chosen same-dataset proxy"""
+    """Fit phi and psi directly to the chosen same-dataset proxy"""
     v_arr = np.asarray(v_series, dtype=float)
     tau_target_arr = np.asarray(tau_target, dtype=float)
     tau0 = float(max(tau_target_arr[0], 0.0)) if tau_target_arr.size else 0.0
@@ -386,20 +386,9 @@ def fit_tau_proxy_reference_constrained(
 ) -> tuple[float, float, float, float, np.ndarray]:
     """Find the optimal (phi, psi) on the constraint line phi = r_gain * psi.
 
-    The external toxicity reference fixes the steady-state gain ratio
-    r_gain = tau_ref / V*_moderate = phi/psi, which confines the parameter
-    pair to a line in (phi, psi) space.  Within that line, psi is the single
-    free parameter.  This function optimises psi by 1-D grid-then-refine search
+    The external toxicity reference fixes r_gain = tau_ref / V*_moderate = phi/psi.
+    Psi is the single free parameter -- I'm optimising it by 1-D grid-then-refine
     for the best weighted proxy-fit quality.
-
-    This is strictly better-motivated than the cross-anchored heuristic (which
-    reads psi from the post-peak decay slope of the RE proxy) because it searches
-    the entire constraint line and finds the psi that minimises proxy loss directly.
-
-    IMPORTANT: all configs sharing the same r_gain = phi/psi produce the same
-    long-run tau* = r_gain * V*.  The reference-constrained and external configs
-    therefore have identical long-run policy outcomes; they differ only in how
-    fast the pressure relaxes (i.e. in transient dynamics).
     """
     v_arr = np.asarray(v_series, dtype=float)
     tau_target_arr = np.asarray(tau_target, dtype=float)
@@ -418,8 +407,7 @@ def fit_tau_proxy_reference_constrained(
     phi_lo, phi_hi = TAU_PARAM_BOUNDS[0]
     r = float(r_gain)
 
-    # Restrict psi to the sub-interval where phi = r*psi stays within bounds.
-    # Above psi_max the phi bound would be violated, breaking the constraint.
+    # Restricting psi so that phi = r*psi stays within bounds
     psi_max = float(np.clip(phi_hi / r, psi_lo, psi_hi)) if r > 0.0 else psi_hi
 
     def loss_at_psi(psi_val: float) -> float:
@@ -451,7 +439,7 @@ def fit_tau_proxy(v_series: np.ndarray,
                   tau_target: np.ndarray,
                   re_counts: np.ndarray | None = None,
                   mt_counts: np.ndarray | None = None) -> tuple[float, float, float, float, np.ndarray, dict[str, float]]:
-    """fit the chosen proxy directly, while also recording a decay-based psi diagnostic"""
+    """Fit the chosen proxy directly, also recording a decay-based psi diagnostic"""
     v_arr = np.asarray(v_series, dtype=float)
     tau_target = np.asarray(tau_target, dtype=float)
     if re_counts is not None:
@@ -490,7 +478,7 @@ def bootstrap_calibration(empirical_norm: np.ndarray,
                           window_counts: np.ndarray,
                           B: int = 500,
                           seed: int = 348) -> dict:
-    """poisson bootstrap -- resample counts and refit B times to get CIs"""
+    """Poisson bootstrap -- resample counts and refit B times to get CIs"""
     beta0, gamma0, lambda0, lambda_decay, v0_fit, _loss, fitted_norm = fit_basic_ivf(empirical_norm, window_counts)
     fitted_counts = fitted_norm * np.max(window_counts)
     rng = np.random.default_rng(seed)
@@ -538,7 +526,7 @@ def bootstrap_calibration(empirical_norm: np.ndarray,
 def profile_likelihood(empirical_norm: np.ndarray,
                        window_counts: np.ndarray,
                        best_params: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """sweep beta0 and gamma0 one at a time with guarded warm starts"""
+    """Sweep beta0 and gamma0 one at a time with guarded warm starts"""
     beta0_best, gamma0_best, _lambda0_best, _lambda_decay_best, _v0_best = best_params
     beta_grid = np.unique(np.sort(np.append(
         np.linspace(max(0.55, 0.70 * beta0_best), min(1.45, 1.35 * beta0_best), 35),

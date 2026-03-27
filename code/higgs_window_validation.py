@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""fit the reduced IVF helper model on several additional active Higgs windows"""
+"""Fit the reduced IVF helper model on several additional active Higgs windows"""
 
 import sys
 from pathlib import Path

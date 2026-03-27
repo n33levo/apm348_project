@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""main script -- run this one and it does the whole calibration + scenarios + figures"""
+"""Main script -- run this and it does the whole calibration + scenarios + figures"""
 
 import numpy as np
 
@@ -18,9 +18,7 @@ from ivfs_figures import (make_calibration_figure, make_phi_sensitivity_figure, 
 
 
 def main() -> None:
-    print('=' * 68)
-    print('APM348 IVFS -- running calibration + scenarios + figures')
-    print('=' * 68)
+    print('Running calibration + scenarios + figures')
 
     ensure_dataset()
     rt_timestamps, re_timestamps, mt_timestamps, total_rows = parse_activity_file(HIGGS_TXT)
@@ -239,10 +237,9 @@ def main() -> None:
     print()
     w_opt, alpha_peak = find_W_for_interior_Emax(beta0, gamma0)
     if w_opt is not None:
-        print(f'Interior E* peak found: W={w_opt:.1f} gives peak at alpha={alpha_peak:.2f}')
+        print(f'interior E* peak found: W={w_opt:.1f} gives peak at alpha={alpha_peak:.2f}')
     else:
-        print('No interior E* peak found for W <= 80; E* peaks at alpha=1.0.')
-        print('This is expected -- the platform that maximizes engagement also gets the worst discussion-pressure/retention outcome.')
+        print('no interior E* peak found for W <= 80; E* peaks at alpha=1.0')
 
     print()
     print('Computing profile likelihood...')

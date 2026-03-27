@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""equilibrium + stability stuff for the IVFS model"""
+"""Equilibrium and stability analysis for the IVFS model"""
 
 import sys
 from pathlib import Path
@@ -125,9 +125,6 @@ def main() -> None:
             print(f'  tau*={eq_state[4]:.6f}, V*={eq_state[1]:.6f}, U*={eq_state[5]:.6f}')
             print(f'  max Re(lambda) at positive equilibrium = {eq_max:.6f}')
         print()
-
-    print('R0 threshold is clear and positive equilibria are stable.')
-    print('Note: tau values here are scenario-driven (assumed phi/psi), not fully calibrated from Higgs.')
 
 
 if __name__ == '__main__':

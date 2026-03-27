@@ -1,8 +1,8 @@
 """Generate 2-D parameter-space heatmaps for the IVFS model.
 
-Produces:
-  assets/alpha_kappa_heatmap.png   – long-run tau* over (alpha, kappa) grid
-  assets/phase_portrait.png        – V-tau phase portrait for the three scenarios
+Producing:
+  assets/alpha_kappa_heatmap.png   -- long-run tau* over (alpha, kappa) grid
+  assets/phase_portrait.png        -- V-tau phase portrait for the three scenarios
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ BETA0 = 1.000073
 GAMMA0 = 0.300283
 
 
-# ── helpers ──────────────────────────────────────────────────────────
+# Helpers
 
 def ivfs_rhs(t, y, alpha, kappa_val, eta_val=ETA, phi_val=PHI, psi_val=PSI):
     I, V, F, S, tau, U = y
@@ -54,7 +54,7 @@ def steady_state(alpha, kappa_val, T=2000):
     return sol.y[:, -1]  # I, V, F, S, tau, U at t=T
 
 
-# ── Figure 1: alpha-kappa heatmap of tau* ────────────────────────────
+# Alpha-kappa heatmap of tau*
 
 def make_heatmap():
     ensure_layout()
@@ -125,7 +125,7 @@ def make_heatmap():
     print(f"Saved -> {out}")
 
 
-# ── Figure 2: phase portrait V vs tau ────────────────────────────────
+# Phase portrait V vs tau
 
 def make_phase_portrait():
     ensure_layout()
@@ -165,8 +165,8 @@ def make_phase_portrait():
 
 
 if __name__ == "__main__":
-    print("Computing alpha-kappa heatmap (this may take a minute)...")
+    print("computing alpha-kappa heatmap (this may take a minute)...")
     make_heatmap()
-    print("Computing phase portrait...")
+    print("computing phase portrait...")
     make_phase_portrait()
-    print("Done.")
+    print("done.")
