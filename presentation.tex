@@ -37,171 +37,324 @@ Lifecycles on Social Media with Toxicity Feedback}
 
 \begin{document}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 1: TITLE
-% ═══════════════════════════════════════════════════════════════
+% slide 1: title
 \begin{frame}
   \titlepage
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 2: MOTIVATION
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{Why This Matters}
-  Engagement-optimized algorithms amplify provocative content.
-  This boosts short-term engagement but increases toxicity and
-  drives users away \cite{brady2017,beknazar2025}.
-
-  \vspace{0.8em}
-  \begin{block}{Central question}
-    How does platform amplification shape the full lifecycle of rage-bait,
-    and what are the costs for toxicity and user retention?
-  \end{block}
-
-  \vspace{0.8em}
-  \textbf{Three things we will show:}
-  \begin{enumerate}
-    \item A sharp amplification \textbf{threshold} exists
-    \item Above it, a \textbf{toxicity feedback loop} locks in
-    \item The engagement--health \textbf{tradeoff is quantifiable}
-  \end{enumerate}
-\end{frame}
-
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 3: THE MODEL
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{The IVFS Model}
+% slide 2: motivation
+\begin{frame}{Why Rage-Bait?}
   \begin{columns}[T]
-    \begin{column}{0.42\textwidth}
-      Six state variables:
-      \begin{itemize}
-        \item $I, V, F, S$: content lifecycle\\
-              {\small ignored $\to$ viral $\to$ fatigued / suppressed}
-        \item $\tau$: latent discussion pressure
-        \item $U$: active user pool
-      \end{itemize}
-
-      \vspace{0.5em}
-      \textbf{Key idea:} we classify \emph{content}, not users.
-      Platforms rank content; content volumes are directly observable.
-    \end{column}
-    \begin{column}{0.56\textwidth}
+    \begin{column}{0.38\textwidth}
       \centering
-      \includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{ivfs_structure_diagram.png}
+      \includegraphics[width=\linewidth,height=0.65\textheight,keepaspectratio]{rage.png}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      Moralized emotional content spreads further and faster than neutral
+      content on every major platform \cite{brady2017}.
+
+      \vspace{0.6em}
+      Platforms \emph{know} this and tune their algorithms accordingly---but
+      what are the downstream costs?
+
+      \vspace{0.8em}
+      \begin{block}{Central question}
+        How does algorithmic amplification shape the full lifecycle of
+        rage-bait, and what does it cost in toxicity and user retention?
+      \end{block}
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 4: THRESHOLD AND FEEDBACK
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{Threshold and Feedback Loop}
+% slide 3: model structure
+\begin{frame}{Model Structure}
   \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
-      \begin{alertblock}{Amplification threshold}
-        \[
-        \mathcal{R}_0 = \frac{\alpha\,\beta_0\,I_{\mathrm{DFE}}}{\gamma_0 + \mu_c}
-        \qquad \boxed{\alpha_{\mathrm{crit}} \approx 0.3165}
-        \]
-      \end{alertblock}
-
-      \vspace{0.4em}
-      \begin{itemize}
-        \item Below threshold: virality dies out, no pressure
-        \item Above threshold: endemic virality, users leave
-        \item Transition is \textbf{transcritical}
-      \end{itemize}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \includegraphics[width=\linewidth,height=0.72\textheight,keepaspectratio]{ivfs_structure_diagram.png}
     \end{column}
-    \begin{column}{0.47\textwidth}
-      \begin{block}{The toxicity feedback loop}
-        \centering
-        \vspace{0.2em}
-        $V \xrightarrow{\;\phi\;} \tau \xrightarrow{\;\kappa\;} \beta_{\mathrm{eff}} \xrightarrow{} V$
-        \vspace{0.2em}
-      \end{block}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{tabular}{@{}cl@{}}
+        \toprule
+        Variable & Meaning \\
+        \midrule
+        $I$ & Ignored content (unseen) \\
+        $V$ & Viral content (spreading) \\
+        $F$ & Fatigued content (stale) \\
+        $S$ & Suppressed content (removed) \\
+        $\tau$ & Discussion pressure (latent toxicity) \\
+        $U$ & Active user pool \\
+        \bottomrule
+      \end{tabular}
 
-      \vspace{0.4em}
-      Viral content generates discussion pressure,
-      which amplifies spread, which creates more viral content.
+      \vspace{0.6em}
+      \textbf{Key idea:} we classify \emph{content}, not users.
 
       \vspace{0.3em}
-      Counteracted by fatigue, pressure decay, and user departure.
+      Content volumes are directly observable; user states are not.
     \end{column}
   \end{columns}
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 5: RESULTS
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{Results: Bifurcation and Policy Tradeoff}
-  \begin{columns}[T]
-    \begin{column}{0.55\textwidth}
-      \centering
-      \includegraphics[width=\linewidth,height=0.70\textheight,keepaspectratio]{r0_bifurcation.png}
-    \end{column}
-    \begin{column}{0.43\textwidth}
-      \begin{alertblock}{Key numbers}
-        Moderate ($\alpha\!=\!0.5$) to aggressive ($\alpha\!=\!0.9$):
-        \begin{itemize}
-          \item Viral volume up 73\%
-          \item Discussion pressure up 73\%
-          \item User base down 40\%
-        \end{itemize}
-      \end{alertblock}
+% slide 4a: content ODEs
+\begin{frame}{Content Dynamics}
+  \begin{align*}
+    \dot I &= \frac{\rho\, U}{1+U}
+             - \beta_{\mathrm{eff}}\,I\,V
+             - (\delta + \mu_c)\,I \\[6pt]
+    \dot V &= \beta_{\mathrm{eff}}\,I\,V
+             - \gamma_{\mathrm{eff}}\,V
+             - \mu_c\,V \\[6pt]
+    \dot F &= \gamma_{\mathrm{eff}}\,V
+             - \mu_c\,F \\[6pt]
+    \dot S &= \delta\,I
+             - \mu_c\,S
+  \end{align*}
 
-      \vspace{0.5em}
-      Sensitivity analysis: spread parameters ($\gamma_0$, $\alpha$, $\beta_0$) dominate
-      viral volume; pressure parameters ($\phi$, $w$) drive user retention.
-    \end{column}
-  \end{columns}
+  \vspace{0.3em}
+  \begin{alertblock}{Effective rates}
+    $\beta_{\mathrm{eff}} = \alpha\,\beta_0\,(1+\kappa\,\tau)$
+    \hfill
+    $\gamma_{\mathrm{eff}} = \gamma_0\,(1+\eta\,\tau)$
+  \end{alertblock}
+
+  \vspace{0.3em}
+  $\alpha$ = platform amplification strength. \quad
+  $\kappa$ = toxicity boost to spread. \quad
+  $\eta$ = toxicity-accelerated fatigue.
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 6: CALIBRATION AND LIMITATIONS
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{Calibration and Limitations}
+% slide 4b: pressure and user ODEs
+\begin{frame}{Pressure and User Dynamics}
+  \begin{align*}
+    \dot \tau &= \phi\,V - \psi\,\tau \\[8pt]
+    \dot U    &= \nu - \lambda_u\,(1 + w\,\tau)\,U
+  \end{align*}
+
+  \vspace{0.4em}
   \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \begin{greenblock}{Spread block: well-identified}
-        \begin{itemize}
-          \item Higgs Twitter retweets, 100\,h window
-          \item Full-window $R^2 = 0.92$, narrow bootstrap CIs
-          \item Beats SIR benchmark (spike-window $R^2 = 0.89$ vs.\ $0.69$)
-        \end{itemize}
-      \end{greenblock}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Pressure equation}
+        Viral content generates discussion pressure at rate $\phi$.
+
+        Pressure decays naturally at rate $\psi$.
+      \end{block}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \begin{alertblock}{Pressure block: partial}
-        \begin{itemize}
-          \item Reply activity as proxy
-          \item Anchored to external toxicity scale
-          \item Qualitative ranking is robust
-        \end{itemize}
+    \begin{column}{0.46\textwidth}
+      \begin{alertblock}{User equation}
+        Users arrive at rate $\nu$ and leave at baseline rate $\lambda_u$.
+
+        Toxicity multiplies departure by $(1 + w\,\tau)$.
       \end{alertblock}
     \end{column}
   \end{columns}
 
   \vspace{0.6em}
-  \textbf{Limitation:} pressure parameters $(\phi, \psi)$ are not uniquely identified
-  from available data. The spread calibration is strong; the pressure block is
-  proxy-grounded.
+  \centering
+  \textbf{Feedback:} $V \;\xrightarrow{\;\phi\;}\; \tau
+  \;\xrightarrow{\;\kappa\;}\; \beta_{\mathrm{eff}}
+  \;\xrightarrow{}\; V$
+  \quad---\quad a self-reinforcing toxicity loop.
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  SLIDE 7: TAKEAWAYS
-% ═══════════════════════════════════════════════════════════════
-\begin{frame}{Takeaways}
-  \begin{enumerate}
-    \item \textbf{Threshold.} A sharp amplification threshold exists
-    ($\alpha_{\mathrm{crit}} \approx 0.3165$). Below it, no sustained virality.
+% slide 5a: well-posedness and R_0
+\begin{frame}{Well-Posedness and the Basic Reproduction Number}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Well-posedness}
+        \begin{itemize}
+          \item \textbf{Nonnegativity:} every face of
+                $\mathbb{R}^6_{\geq 0}$ is inward-pointing
+          \item \textbf{Boundedness:}
+                $U \leq \nu/\lambda_u$, \;
+                $C \leq \rho/\mu_c$, \;
+                $\tau \leq \phi\,C_{\max}/\psi$
+        \end{itemize}
 
-    \vspace{0.4em}
-    \item \textbf{Feedback loop.} Above threshold, a self-reinforcing cycle:
+        \vspace{0.3em}
+        Solutions exist globally and stay in the positive cone.
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{Amplification threshold}
+        \[
+        \mathcal{R}_0
+        = \frac{\alpha\,\beta_0\,I_{\mathrm{DFE}}}{\gamma_0 + \mu_c}
+        \]
+
+        \vspace{0.2em}
+        \[
+        \boxed{\;\alpha_{\mathrm{crit}} \approx 0.3165\;}
+        \]
+      \end{alertblock}
+
+      \vspace{0.3em}
+      $\mathcal{R}_0 < 1$: virality dies out (DFE stable).
+
+      $\mathcal{R}_0 > 1$: endemic virality persists.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% slide 5b: bifurcation and stability
+\begin{frame}{Bifurcation and Stability}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth,height=0.70\textheight,keepaspectratio]{r0_bifurcation.png}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{block}{Transcritical bifurcation}
+        At $\alpha = \alpha_{\mathrm{crit}}$, the disease-free and
+        endemic equilibria exchange stability.
+      \end{block}
+
+      \vspace{0.4em}
+      \begin{itemize}
+        \item DFE eigenvalue for $V$:
+        \[
+          (\gamma_0 + \mu_c)(\mathcal{R}_0 - 1)
+        \]
+        \item Positive equilibrium: numerically verified LAS for all
+              tested $\alpha > \alpha_{\mathrm{crit}}$
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% slide 6: feedback loop
+\begin{frame}{The Toxicity Feedback Loop}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{r0_bifurcation.png}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{block}{The cycle}
+        \centering
+        \vspace{0.3em}
+        {\large
+        $V \;\xrightarrow{\;\phi\;}\; \tau
+         \;\xrightarrow{\;\kappa\;}\; \beta_{\mathrm{eff}}
+         \;\xrightarrow{}\; V$}
+        \vspace{0.3em}
+      \end{block}
+
+      \vspace{0.4em}
+      \begin{enumerate}
+        \item Viral content drives discussion pressure ($\phi$)
+        \item Pressure amplifies spread rate ($\kappa$)
+        \item Faster spread creates more viral content
+      \end{enumerate}
+
+      \vspace{0.4em}
+      \textbf{Brakes:} fatigue ($\gamma_{\mathrm{eff}}$),
+      pressure decay ($\psi$), and user departure ($w\tau$).
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% slide 7: calibration
+\begin{frame}{Calibration}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{greenblock}{Spread block \checkmark}
+        \begin{itemize}
+          \item Higgs Twitter retweet cascade, 100\,h window
+          \item Full-window $R^2 = 0.92$
+          \item Narrow bootstrap confidence intervals
+          \item Beats SIR benchmark\\
+                (spike $R^2 = 0.89$ vs.\ $0.69$)
+        \end{itemize}
+      \end{greenblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{Pressure block $\boldsymbol\sim$}
+        \begin{itemize}
+          \item Reply activity as proxy for $\tau$
+          \item Anchored to external Jigsaw toxicity scale
+          \item $\phi, \psi$ not uniquely identified
+          \item Qualitative policy ranking is robust
+                across all five calibration configs
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.5em}
+  \centering
+  Spread calibration is strong; pressure block is proxy-grounded.
+\end{frame}
+
+% slide 8: results
+\begin{frame}{Results: Three Amplification Scenarios}
+  \centering
+  \begin{tabular}{lccccc}
+    \toprule
+    Scenario & $\alpha$ & $\mathcal{R}_0$ & $V^*$ & $\tau^*$ & $U^*$ \\
+    \midrule
+    Engagement-first & $0.9$ & $2.84$ & $0.1203$ & $0.0674$ & $29.88$ \\
+    Moderate          & $0.5$ & $1.58$ & $0.0697$ & $0.0390$ & $35.97$ \\
+    Health-first      & $0.2$ & $0.63$ & $0.0000$ & $0.0000$ & $50.00$ \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{alertblock}{The cost of amplification}
+        Going from moderate to aggressive:
+        \begin{itemize}
+          \item Viral volume up \textbf{+73\%}
+          \item Discussion pressure up \textbf{+73\%}
+          \item User base down \textbf{$-$40\%}
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{greenblock}{The escape}
+        Below $\alpha_{\mathrm{crit}} \approx 0.3165$:
+        \begin{itemize}
+          \item No sustained virality
+          \item Zero endemic pressure
+          \item Full user retention
+        \end{itemize}
+      \end{greenblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% slide 9: sensitivity
+\begin{frame}{Sensitivity Analysis}
+  \centering
+  \includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{sensitivity_bars.png}
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Spread parameters ($\gamma_0, \alpha, \beta_0$) dominate viral volume.
+    \item Pressure parameters ($\phi, w$) control user retention.
+    \item Policy levers separate: content tuning $\neq$ retention tuning.
+  \end{itemize}
+\end{frame}
+
+% slide 10: conclusions
+\begin{frame}{Conclusions}
+  \begin{enumerate}
+    \item \textbf{Threshold.}\;
+    A sharp amplification threshold exists
+    ($\alpha_{\mathrm{crit}} \approx 0.3165$).
+    Below it, no sustained virality.
+
+    \vspace{0.5em}
+    \item \textbf{Feedback loop.}\;
+    Above threshold, a self-reinforcing cycle locks in:
     viral content $\to$ pressure $\to$ amplified spread $\to$ more viral content.
 
-    \vspace{0.4em}
-    \item \textbf{Tradeoff.} Aggressive amplification buys engagement today at the
-    cost of a smaller, more toxic, less sustainable platform tomorrow.
+    \vspace{0.5em}
+    \item \textbf{Quantifiable tradeoff.}\;
+    Aggressive amplification buys engagement today at the cost of a
+    smaller, more toxic, less sustainable platform tomorrow.
   \end{enumerate}
 
   \vspace{0.8em}
@@ -209,12 +362,10 @@ Lifecycles on Social Media with Toxicity Feedback}
   {\Large Thank you. \quad Questions?}
 
   \vspace{0.4em}
-  {\small Code and report: \texttt{github.com/n33levo/apm348\_project}}
+  {\small Code and report:\; \texttt{github.com/n33levo/apm348\_project}}
 \end{frame}
 
-% ═══════════════════════════════════════════════════════════════
-%  BACKUP SLIDES (for Q&A)
-% ═══════════════════════════════════════════════════════════════
+% backup slides
 \appendix
 
 \begin{frame}{Backup: Full ODE System}
@@ -231,33 +382,6 @@ Lifecycles on Social Media with Toxicity Feedback}
   \beta_{\mathrm{eff}} = \alpha\,\beta_0\,(1+\kappa\,\tau), \qquad
   \gamma_{\mathrm{eff}} = \gamma_0\,(1+\eta\,\tau)
   \]
-\end{frame}
-
-\begin{frame}{Backup: Scenario Numbers \& Sensitivity}
-  \small
-  \centering
-  \begin{tabular}{lccccc}
-    \toprule
-    Scenario & $\alpha$ & $\mathcal R_0$ & $V^*$ & $\tau^*$ & $U^*$ \\
-    \midrule
-    Engagement-first & $0.9$ & $2.84$ & $0.1203$ & $0.0674$ & $29.88$ \\
-    Moderate          & $0.5$ & $1.58$ & $0.0697$ & $0.0390$ & $35.97$ \\
-    Health-first      & $0.2$ & $0.63$ & $0.0000$ & $0.0000$ & $50.00$ \\
-    \bottomrule
-  \end{tabular}
-
-  \vspace{0.6em}
-  \begin{tabular}{lccc}
-    \toprule
-    & $S(V^*,p)$ & $S(\tau^*,p)$ & $S(U^*,p)$ \\
-    \midrule
-    $\alpha$   & $+1.67$ & $+1.67$ & $-0.469$ \\
-    $\beta_0$  & $+1.67$ & $+1.67$ & $-0.469$ \\
-    $\gamma_0$ & $-2.59$ & $-2.59$ & $+0.726$ \\
-    $\phi$     & $\approx 0$ & $+1.00$ & $-0.281$ \\
-    $\psi$     & $\approx 0$ & $-1.00$ & $+0.281$ \\
-    \bottomrule
-  \end{tabular}
 \end{frame}
 
 \begin{frame}{Backup: Pressure Configurations}
@@ -280,27 +404,12 @@ Lifecycles on Social Media with Toxicity Feedback}
 
   \vspace{0.3em}
   \small
-  The qualitative policy ranking (engagement-first $>$ moderate $>$ health-first for pressure) is preserved across \textbf{all five} configurations.
-\end{frame}
-
-\begin{frame}{Backup: Well-Posedness}
-  \small
-  \begin{itemize}
-    \item \textbf{Nonnegativity:} Every face of $\mathbb{R}^6_{\geq 0}$ is inward-pointing.
-    \item \textbf{Boundedness:} $U \leq \nu/\lambda_u$, total content $C \leq \rho/\mu_c$, $\tau \leq \phi C_{\max}/\psi$.
-    \item \textbf{DFE stability:} Jacobian has block-triangular structure; $V$-eigenvalue is $(\gamma_0+\mu_c)(\mathcal{R}_0-1)$.
-    \item \textbf{Positive equilibrium:} Numerically verified LAS at all tested $\alpha > \alpha_{\mathrm{crit}}$.
-  \end{itemize}
+  The qualitative policy ranking is preserved across all five configurations.
 \end{frame}
 
 \begin{frame}{Backup: Higgs Dataset Overview}
   \centering
   \includegraphics[width=0.85\linewidth,height=0.75\textheight,keepaspectratio]{higgs_overview.png}
-\end{frame}
-
-\begin{frame}{Backup: $\phi$ Sensitivity}
-  \centering
-  \includegraphics[width=0.85\linewidth,height=0.75\textheight,keepaspectratio]{phi_sensitivity.png}
 \end{frame}
 
 \begin{frame}[allowframebreaks]{References}
