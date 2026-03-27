@@ -19,7 +19,7 @@
 This project studies how platform ranking can drive a tradeoff between short-run engagement and long-run platform health. Prior evidence shows engagement-based algorithms can amplify divisive content \cite{huszar2022,milli2025}, while toxic content can affect user behavior \cite{beknazar2025}. Moral-emotional content also spreads more readily \cite{brady2017}. We model this using a compartmental ODE system where \textbf{content items} (not users) are the primary dynamical units.
 
 \section*{2. Previous Mathematical Models}
-SIR-style models and rumor models \cite{daleyKendall1964} give threshold and stability tools for diffusion, and recent work applies these ideas to social-media spread \cite{liShao2024}. For example, SVFR-type models focus on users' decisions and local network behavior. Toxicity-focused compartment models also exist \cite{maleki2022,addai2025}. The main gap is that most models compartmentalize \emph{users}; our model compartmentalizes \emph{content lifecycle states} and couples them to toxicity and user attrition, describing a more global scale.
+SIR-style models and rumor models \cite{daleyKendall1964} give threshold and stability tools for diffusion, and recent work applies these ideas to social-media spread \cite{liShao2024}. For example, SVFR-type models focus on users' decisions and local network behavior. Toxicity-focused compartment models also exist \cite{maleki2022,addai2025}. The main gap is that most models compartmentalize \emph{users}; our model compartmentalizes \emph{content lifecycle states} and couples them to toxicity and user attrition, working at a more aggregate level.
 
 \section*{3. Proposed Model and Planned Contributions}
 State variables are $I,V,F,S,\tau,U$ for ignored, viral, fatigued, moderated/suppressed content, toxicity, and active users. Core transitions are:
@@ -38,7 +38,7 @@ with
 \beta_{\mathrm{eff}}=\alpha\beta_0(1+\kappa\tau),\qquad
 \gamma_{\mathrm{eff}}=\gamma_0(1+\eta\tau).
 \]
-Here $\rho$ is content injection per user, $\mu_c$ natural content decay, and $\delta$ moderation/suppression. Main contribution: a content-centric model that links amplification, toxicity, and user-base dynamics in one system.
+Here $\rho$ is content injection per user, $\mu_c$ natural content decay, and $\delta$ moderation/suppression. The point is a content-centric model that links amplification, toxicity, and user-base dynamics in one system.
 For simplicity, direct moderation is modeled only from $I$ via $\delta I$; an extension can include moderation from $V$ or $F$.
 Natural decay $\mu_c$ represents loss of visibility/attention (content leaving the system), while $S$ tracks explicit moderation removals.
 For the empirical Higgs fit, we use a reduced IVF calibration model for the retweet cascade with a decaying exogenous seed term $\lambda(t)=\lambda_0 e^{-d_\lambda t}$. This improves the data fit for the observed tail without changing the main IVFS policy model written above.
@@ -62,7 +62,7 @@ Current results indicate that higher amplification improves short-run virality b
 \paragraph{Limitations.}
 Homogeneous mixing, deterministic dynamics, and single-index toxicity are the main structural simplifications.
 The fitted $\beta_0,\gamma_0$ and calibration-side seed parameters are estimated from a single main Higgs window, so the empirical spread fit is stronger than the toxicity fit. Additional 48-hour active-window refits support the helper model's local burst-decay shape, but they do not imply globally stable parameters across the whole record. In particular, toxicity is still only partially identified from the same dataset: the reference-constrained fit gives the best $(\phi,\psi)$ pair consistent with the external scale, but the Jigsaw comparison remains an external reference rather than a direct platform match. The current $\phi$-sweep and reference-constrained tau fit should therefore be read as robustness and constrained-calibration arguments, not as substitutes for true same-dataset toxicity labels. Even so, the bootstrap intervals are narrow and the local profile curves show well-defined minima for both $\beta_0$ and $\gamma_0$, lending practical identifiability support for the spread component.
-Extensions to network-aware and stochastic models are natural next steps.
+Network-aware and stochastic extensions are obvious follow-ups.
 
 \begingroup
 \footnotesize

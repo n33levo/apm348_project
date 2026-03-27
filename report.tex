@@ -65,15 +65,15 @@ We develop a deterministic compartmental ordinary differential equation model fo
 
 \subsection{Algorithmic amplification and platform health}
 
-Social media platforms use recommendation algorithms to select and rank content for users. These algorithms are typically optimized for engagement metrics such as clicks, shares, and time-on-platform. A growing body of empirical work shows that engagement-optimized algorithms tend to amplify politically divisive, morally charged, and emotionally provocative content \cite{huszar2022, milli2025, brady2017}. Husz\'{a}r et al.\ \cite{huszar2022} conducted a large-scale audit of Twitter's algorithmic timeline and found that the algorithm amplified content from political parties, with particularly strong effects for politically right-leaning sources in several countries. Milli et al.\ \cite{milli2025} showed that content promoted by engagement-based algorithms tends to be more divisive and less satisfying to users than content they would have chosen themselves. Brady et al.\ \cite{brady2017} demonstrated that moral-emotional language in social media posts significantly increases their diffusion, with each additional moral-emotional word raising the retweet rate by roughly 20\%.
+Social media platforms use recommendation algorithms to select and rank content for users. These algorithms are typically optimized for engagement metrics such as clicks, shares, and time-on-platform. Recent work shows that engagement-optimized algorithms tend to amplify politically divisive, morally charged, and emotionally provocative content \cite{huszar2022, milli2025, brady2017}. Husz\'{a}r et al.\ \cite{huszar2022} conducted a large-scale audit of Twitter's algorithmic timeline and found that the algorithm amplified content from political parties, with particularly strong effects for politically right-leaning sources in several countries. Milli et al.\ \cite{milli2025} showed that content promoted by engagement-based algorithms tends to be more divisive and less satisfying to users than content they would have chosen themselves. Brady et al.\ \cite{brady2017} demonstrated that moral-emotional language in social media posts significantly increases their diffusion, with each additional moral-emotional word raising the retweet rate by roughly 20\%.
 
-These findings point to a platform-level tradeoff. Amplification can increase short-run engagement, but it may simultaneously intensify harmful discussion dynamics, increase user fatigue, and erode long-run platform health. Beknazar-Yuzbashev et al.\ \cite{beknazar2025} provide direct experimental evidence: a field experiment showed that exposure to toxic content on social media reduced subsequent user engagement, suggesting that toxicity imposes real costs on platform participation.
+This suggests a tradeoff at the platform level. Amplification can increase short-run engagement, but it may simultaneously intensify harmful discussion dynamics, increase user fatigue, and erode long-run platform health. Beknazar-Yuzbashev et al.\ \cite{beknazar2025} give experimental evidence for this: a field experiment showed that exposure to toxic content on social media reduced subsequent user engagement, suggesting that toxicity imposes real costs on platform participation.
 
 \subsection{Compartmental models for information spread}
 
-Compartmental models have a long history in epidemiology and have been widely applied to information dynamics. The classical SIR (Susceptible-Infected-Recovered) model partitions a population into compartments and describes transitions between them using ordinary differential equations. The analogy between disease transmission and information spread was noted early by Daley and Kendall \cite{daleyKendall1964}, who proposed a rumour-spreading model based on similar compartmental structure. In the social media setting, De Domenico et al.\ \cite{domenico2013} used the Higgs Twitter dataset to study the anatomy of a scientific rumour, fitting epidemic-style models to retweet cascades.
+Compartmental models from epidemiology have been applied widely to information dynamics. The classical SIR (Susceptible-Infected-Recovered) model partitions a population into compartments and describes transitions between them using ordinary differential equations. Daley and Kendall \cite{daleyKendall1964} noted the analogy between disease transmission and information spread early on and proposed a rumour-spreading model with similar compartmental structure. In the social media setting, De Domenico et al.\ \cite{domenico2013} used the Higgs Twitter dataset to study the anatomy of a scientific rumour, fitting epidemic-style models to retweet cascades.
 
-The DABAR modelling procedure taught in this course (\emph{Define, Assume, Build, Assess, Report}) provides the methodological framework for our project. We define the modelling question around platform amplification tradeoffs, state our assumptions about aggregate content dynamics, build a six-state compartmental ODE system, assess it against empirical data and analytical checks, and report the results with honest attention to limitations.
+The DABAR modelling procedure taught in this course (\emph{Define, Assume, Build, Assess, Report}) is the framework we follow. We define the modelling question around platform amplification tradeoffs, state our assumptions about aggregate content dynamics, build a six-state compartmental ODE system, assess it against empirical data and analytical checks, and report the results with honest attention to limitations.
 
 The IVFS model we develop falls into the category of a \emph{deterministic dynamical model} in the language of the course. It is a system of first-order autonomous ODEs whose state variables are continuous and whose parameters are either calibrated from data or fixed at scenario values. The model is not stochastic, not optimization-based, and not probabilistic. Its core analytical tools are equilibrium analysis, linearized stability, threshold quantities, and sensitivity indices, all of which are covered extensively in the course material.
 
@@ -81,13 +81,13 @@ The IVFS model we develop falls into the category of a \emph{deterministic dynam
 
 Most existing compartmental models for social-media dynamics classify \emph{users} into behavioural states. For example, an SVFR-type model might place users into susceptible, viewing, forwarding, and recovered compartments \cite{liShao2024, jing2018}. Toxicity-focused models similarly track user infection states, where ``infection'' represents adoption of toxic behaviour \cite{maleki2022, addai2025}. These models are valuable, but they require assumptions about individual user decision-making and local network structure that are difficult to validate at platform scale.
 
-Our model takes a different approach. Instead of compartmentalizing users, we compartmentalize \emph{content items} into lifecycle states: content is created, may go viral, eventually fatigues, and may be moderated. This content-centric framing has several advantages. First, it operates at the aggregate level where platform data is most readily available: retweet counts, reply volumes, and moderation actions are all content-level observables. Second, it separates the amplification mechanism (which acts on content visibility) from the user response (which is captured by a single aggregate user pool). Third, it allows us to study the platform health tradeoff directly in terms of content lifecycle dynamics rather than individual user psychology.
+Our model takes a different approach. Instead of compartmentalizing users, we compartmentalize \emph{content items} into lifecycle states: content is created, may go viral, eventually fatigues, and may be moderated. This content-centric framing works at the aggregate level where platform data is most available (retweet counts, reply volumes, and moderation actions are all content-level observables), separates amplification (which acts on content visibility) from user response (captured by a single aggregate user pool), and lets us study the platform health tradeoff directly through content lifecycle dynamics rather than individual user psychology.
 
-The price of this simplification is that we lose resolution on user heterogeneity and network topology. We treat users as a single aggregate pool $U$ with constant replenishment and pressure-dependent attrition. This is a deliberate modelling choice: it keeps the system tractable (six states rather than dozens) while still capturing the feedback loop between content amplification, discussion pressure, and platform health.
+The tradeoff is that we lose resolution on user heterogeneity and network topology. We treat users as a single aggregate pool $U$ with constant replenishment and pressure-dependent attrition. We made this choice on purpose: it keeps the system tractable (six states rather than dozens) while still capturing the feedback loop between content amplification, discussion pressure, and platform health.
 
 \subsection{The dataset at a glance}
 
-The empirical anchor for this project is the SNAP Higgs Twitter dataset \cite{domenico2013}, a record of approximately 563{,}000 social interactions captured during a 168-hour observation window centred on the July 2012 Higgs boson announcement. The dataset records three event types, namely retweets (RT), replies (RE), and mentions (MT), with Unix-epoch timestamps at one-second resolution. Figure~\ref{fig:higgs_overview} shows the hourly activity for each type. The dominant feature is a sharp retweet cascade in the first 24 hours, followed by a slower decay. Reply activity, which we later use as a proxy for discussion pressure, tracks the retweet peak with a slight lag. Mention activity is noisier and lower in volume.
+We use the SNAP Higgs Twitter dataset \cite{domenico2013} as our main data source: a record of approximately 563{,}000 social interactions captured during a 168-hour observation window centred on the July 2012 Higgs boson announcement. The dataset records three event types, namely retweets (RT), replies (RE), and mentions (MT), with Unix-epoch timestamps at one-second resolution. Figure~\ref{fig:higgs_overview} shows the hourly activity for each type. The dominant feature is a sharp retweet cascade in the first 24 hours, followed by a slower decay. Reply activity, which we later use as a proxy for discussion pressure, tracks the retweet peak with a slight lag. Mention activity is noisier and lower in volume.
 
 \begin{figure}[H]
 \centering
@@ -99,7 +99,7 @@ The empirical anchor for this project is the SNAP Higgs Twitter dataset \cite{do
 \subsection{Operational definition of rage-bait}
 \label{sec:ragebait-def}
 
-We define \emph{rage-bait content} operationally as any content that generates disproportionate reply and engagement activity relative to its passive resharing volume, captured in our model by the ratio of discussion pressure~$\tau$ to viral volume~$V$. This is a model-level definition, not a colloquial one: content is ``rage-bait'' whenever the pressure-to-virality ratio is elevated, regardless of the topic's political valence or emotional register. The Higgs boson announcement satisfies this definition empirically. During the main cascade, reply and mention activity surges well beyond what the retweet volume alone would predict (Figure~\ref{fig:higgs_overview}b and c), consistent with high-arousal content dynamics in which the event provokes intense discussion, not just passive resharing. This makes the Higgs cascade a valid demonstration dataset for the IVFS model: it exhibits the structural signature, a high $\tau/V$ ratio, that the model is designed to capture, even though the underlying content is scientific rather than politically provocative.
+We define \emph{rage-bait content} operationally as any content that generates disproportionate reply and engagement activity relative to its passive resharing volume, captured in our model by the ratio of discussion pressure~$\tau$ to viral volume~$V$. This is a model-level definition, not a colloquial one: content is ``rage-bait'' whenever the pressure-to-virality ratio is elevated, regardless of the topic's political valence or emotional register. The Higgs boson announcement satisfies this definition empirically. During the main cascade, reply and mention activity surges well beyond what the retweet volume alone would predict (Figure~\ref{fig:higgs_overview}b and c), consistent with high-arousal content dynamics in which the event provokes intense discussion, not just passive resharing. So the Higgs cascade works as a demonstration dataset for the IVFS model: it exhibits the structural signature, a high $\tau/V$ ratio, that the model is designed to capture, even though the underlying content is scientific rather than politically provocative.
 
 % ============================================================
 %  2. PREVIOUS MATHEMATICAL MODELS
@@ -107,7 +107,7 @@ We define \emph{rage-bait content} operationally as any content that generates d
 \section{Previous mathematical models}
 \label{sec:previous}
 
-We review the main lines of mathematical modelling most relevant to our work, focusing on where the IVFS model departs from prior approaches.
+We review the most relevant prior models and where our IVFS model differs.
 
 \subsection{Rumour models and epidemic analogies}
 
@@ -121,7 +121,7 @@ Several recent papers have developed compartmental ODE models specifically for s
 
 Li and Shao \cite{liShao2024} proposed an SVFR (Susceptible-Viewing-Forwarding-Recovered) model for viral video sharing. In their framework, users transition from viewing to forwarding based on content attractiveness, and advertising interventions can modify transition rates. The model is fitted to video-sharing data and produces threshold conditions for viral spread. Jing et al.\ \cite{jing2018} developed a similar SIR-based model for advertising spread on social networks, incorporating network structure through degree distributions.
 
-These user-centric models provide useful threshold and stability results, but they require assumptions about individual user states that are difficult to observe directly at platform scale. For example, classifying a user as ``susceptible'' or ``recovered'' requires knowledge of their exposure history, which is typically not available in public datasets.
+These models give useful threshold results, but they assume user-level states that are hard to observe at platform scale. For example, classifying a user as ``susceptible'' or ``recovered'' requires knowledge of their exposure history, which is typically not available in public datasets.
 
 \subsection{Toxicity propagation models}
 
@@ -153,7 +153,7 @@ Addai et al.\ \cite{addai2025} & Users & Toxicity labels & No & Simulated \\
 \end{tabular}
 \end{table}
 
-The main innovation is the content-centric perspective. By tracking content items through lifecycle stages rather than users through behavioural stages, we obtain a model whose state variables correspond directly to platform-level observables (content volumes, reply rates, active user counts) rather than to latent user states that must be inferred.
+The main difference is the content-centric perspective. Since we track content through lifecycle stages rather than users through behavioural stages, the state variables correspond directly to observable platform quantities (content volumes, reply rates, active user counts) rather than latent user states that would need to be inferred.
 
 
 % ============================================================
@@ -162,7 +162,7 @@ The main innovation is the content-centric perspective. By tracking content item
 \section{Modelling question}
 \label{sec:question}
 
-The central question we address is:
+Our main question is:
 \begin{quote}
 \emph{How does platform amplification shape the full lifecycle of rage-bait content, from creation through virality, fatigue, and suppression, and what are the downstream consequences for discussion toxicity and long-run user retention?}
 \end{quote}
@@ -176,7 +176,7 @@ We investigate five subsidiary questions:
     \item What is the quantitative tradeoff between platform engagement and platform health, and is there an amplification level that balances the two?
 \end{enumerate}
 
-These questions are well-suited to a compartmental ODE framework because they involve threshold behaviour, equilibrium comparisons, bifurcation classification, and parameter sensitivity, all standard tools in the dynamical-systems portion of the course. The ``rage-bait lifecycle'' framing emphasises that the model tracks the full trajectory of provocative content through the platform ecosystem, not just the initial moment of virality.
+These questions fit a compartmental ODE framework: they involve thresholds, equilibria, bifurcation, and sensitivity, all standard tools from the course. The lifecycle framing means we track content through its full trajectory on the platform, not just the initial viral spike.
 
 
 % ============================================================
@@ -185,7 +185,7 @@ These questions are well-suited to a compartmental ODE framework because they in
 \section{Modelling approach}
 \label{sec:approach}
 
-We use a deterministic six-state compartmental ordinary differential equation (ODE) system. This is a \emph{deterministic dynamical model} in the classification used in the course: the state evolves continuously in time according to a system of first-order ODEs, and there is no stochastic or probabilistic component.
+We use a deterministic six-state compartmental ordinary differential equation (ODE) system. In the course's classification, this is a \emph{deterministic dynamical model}: the state evolves continuously in time according to a system of first-order ODEs, and there is no stochastic or probabilistic component.
 
 The modelling approach follows the DABAR procedure:
 \begin{enumerate}[leftmargin=1.5em]
@@ -198,7 +198,7 @@ The modelling approach follows the DABAR procedure:
 
 The empirical strategy has two stages. First, we calibrate the spread block using a reduced IVF helper model fitted to the Higgs retweet stream. This stage identifies the spread-side parameters $(\beta_0, \gamma_0, \lambda_0, d_\lambda)$ with narrow confidence intervals. Second, we simulate the full six-state IVFS model under different amplification scenarios to study the policy tradeoff. The pressure block is handled separately: same-dataset reply activity (RE) serves as a proxy for latent discussion pressure, and the Jigsaw toxicity dataset provides an external reference scale for the magnitude of $\tau$, but neither source uniquely pins down the pressure parameters $(\phi, \psi)$.
 
-This two-stage approach is a deliberate modelling choice. It means the spread calibration is clean and well-identified, while the pressure block is honestly reported as partially constrained. We believe this is preferable to forcing a joint calibration that would conflate well-identified and poorly-identified parameters.
+We split the calibration this way on purpose. It means the spread calibration is clean and well-identified, while the pressure block is honestly reported as partially constrained. This is better than forcing a joint calibration that would mix well-identified and poorly-identified parameters.
 
 % ============================================================
 %  5. FORMULATION OF THE MODEL
@@ -209,7 +209,7 @@ This two-stage approach is a deliberate modelling choice. It means the spread ca
 \subsection{State variables}
 \label{sec:states}
 
-The IVFS model is a deterministic compartmental ODE system with six state variables. The first four represent content lifecycle compartments, the fifth captures latent discussion pressure, and the sixth tracks the aggregate active-user pool.
+The IVFS model is a deterministic compartmental ODE system with six state variables. Four are content lifecycle compartments, one captures latent discussion pressure, and one tracks the aggregate active-user pool.
 
 \begin{center}
 \begin{tabular}{>{\raggedright\arraybackslash}p{1.6cm} >{\raggedright\arraybackslash}p{11cm}}
@@ -264,12 +264,12 @@ The amplification parameter $\alpha \in [0,1]$ is the key policy variable. It re
 \subsection{Modelling assumptions}
 \label{sec:assumptions}
 
-The formulation rests on the following assumptions. We state each assumption explicitly and discuss its justification.
+The model rests on the following assumptions:
 
 \begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Continuous deterministic flows.} Aggregate content and user activity can be approximated by continuous variables evolving according to deterministic ODEs. This is a standard assumption in compartmental modelling and is justified when the population sizes are large enough that stochastic fluctuations are negligible. For the Higgs dataset, the total event volume (563,069 events) supports this approximation.
+    \item \textbf{Continuous deterministic flows.} Aggregate content and user activity can be approximated by continuous variables evolving according to deterministic ODEs. This is standard in compartmental modelling and holds when population sizes are large enough that stochastic noise is small. For the Higgs dataset, the total event volume (563,069 events) supports this approximation.
 
-    \item \textbf{Content lifecycle compartments.} Content items can be meaningfully grouped into four lifecycle stages: ignored, viral, fatigued, and suppressed. The boundaries between these stages are not sharp in reality, but the compartmental approximation captures the essential dynamics of content creation, amplification, decay, and removal.
+    \item \textbf{Content lifecycle compartments.} Content items can be meaningfully grouped into four lifecycle stages: ignored, viral, fatigued, and suppressed. The boundaries between these stages are not sharp in reality, but the compartmental approximation captures the main dynamics of content creation, amplification, decay, and removal.
 
     \item \textbf{Homogeneous mixing.} We assume that all content items in a given compartment have equal probability of transitioning to other compartments. This is the standard well-mixed assumption in compartmental models. It ignores network structure, community effects, and content heterogeneity. We discuss the consequences of this assumption in Section~\ref{sec:limitations}.
 
@@ -299,19 +299,19 @@ where the effective rates are
 \label{eq:eff_rates}
 \end{equation}
 
-We now explain each equation in turn.
+Each equation works as follows.
 
 \paragraph{Content creation (Eq.~\ref{eq:I}).} New content enters the ignored compartment at rate $\rho U / (1+U)$. This is a saturating (Michaelis-Menten type) inflow: when the user pool $U$ is small, content creation scales roughly linearly with $U$; when $U$ is large, creation saturates toward the maximum rate $\rho$. A purely linear inflow $\rho U$ made the content input unrealistically large in our simulations, which is why we adopted the saturating form. Content leaves the ignored compartment either by going viral (at rate $\beta_{\mathrm{eff}} I V$, which is proportional to the product of ignored and viral content, analogous to the mass-action transmission term in SIR models) or by being moderated ($\delta I$) or decaying naturally ($\mu_c I$).
 
-\paragraph{Viral dynamics (Eq.~\ref{eq:V}).} Content enters the viral compartment through the mass-action conversion term $\beta_{\mathrm{eff}} I V$. The effective spread rate $\beta_{\mathrm{eff}} = \alpha \beta_0 (1+\kappa\tau)$ captures two effects: the platform amplification parameter $\alpha$ scales the base rate $\beta_0$, and the pressure feedback $(1+\kappa\tau)$ means that higher discussion pressure increases the rate at which content goes viral. This is the core of the amplification feedback loop. Viral content leaves $V$ by fatiguing at rate $\gamma_{\mathrm{eff}} V$ or decaying at rate $\mu_c V$.
+\paragraph{Viral dynamics (Eq.~\ref{eq:V}).} Content enters the viral compartment through the mass-action conversion term $\beta_{\mathrm{eff}} I V$. The effective spread rate $\beta_{\mathrm{eff}} = \alpha \beta_0 (1+\kappa\tau)$ captures two effects: the platform amplification parameter $\alpha$ scales the base rate $\beta_0$, and the pressure feedback $(1+\kappa\tau)$ means that higher discussion pressure increases the rate at which content goes viral. This is the amplification feedback loop. Viral content leaves $V$ by fatiguing at rate $\gamma_{\mathrm{eff}} V$ or decaying at rate $\mu_c V$.
 
 \paragraph{Fatigue and suppression (Eqs.~\ref{eq:F} and \ref{eq:S}).} These are accumulation compartments. Fatigued content collects previously viral items that have lost momentum; suppressed content collects items removed by moderation. Neither $F$ nor $S$ feeds back into the spread-pressure-user dynamics. They are ``sinks'' in the feedback structure, but they are important for interpreting the content lifecycle and for total content accounting.
 
 \paragraph{Discussion pressure (Eq.~\ref{eq:tau}).} The latent pressure state $\tau$ is driven by viral content at rate $\phi V$ and relaxes at rate $\psi\tau$. This is a simple first-order linear response: pressure builds when viral content is present and decays exponentially when it is not. The equilibrium pressure level (when $V$ is constant) is $\tau^* = \phi V^* / \psi$, so the ratio $\phi/\psi$ sets the scale of long-run pressure.
 
-\paragraph{User dynamics (Eq.~\ref{eq:U}).} Users join the platform at a constant rate $\nu$ and leave at rate $\lambda_u(1+w\tau)U$. The key feature is the pressure-dependent attrition: higher discussion pressure causes faster user departure. At equilibrium, $U^* = \nu / [\lambda_u(1+w\tau^*)]$, so increased pressure directly reduces the steady-state user base.
+\paragraph{User dynamics (Eq.~\ref{eq:U}).} Users join the platform at a constant rate $\nu$ and leave at rate $\lambda_u(1+w\tau)U$. The important part is pressure-dependent attrition: higher discussion pressure causes faster user departure. At equilibrium, $U^* = \nu / [\lambda_u(1+w\tau^*)]$, so increased pressure directly reduces the steady-state user base.
 
-\paragraph{Effective rates (Eq.~\ref{eq:eff_rates}).} The effective spread rate $\beta_{\mathrm{eff}}$ and effective fatigue rate $\gamma_{\mathrm{eff}}$ both depend on the pressure $\tau$. Higher pressure increases both rates: it makes content spread faster (viral amplification) but also fatigue faster (burnout effect). This dual dependence creates a nonlinear feedback: amplification drives viral content, which drives pressure, which in turn modifies both the amplification and fatigue rates.
+\paragraph{Effective rates (Eq.~\ref{eq:eff_rates}).} The effective spread rate $\beta_{\mathrm{eff}}$ and effective fatigue rate $\gamma_{\mathrm{eff}}$ both depend on the pressure $\tau$. Higher pressure increases both rates: it makes content spread faster (viral amplification) but also fatigue faster (burnout effect). This creates a nonlinear feedback: amplification drives viral content, which drives pressure, which in turn modifies both the amplification and fatigue rates.
 
 \subsection{Structure of the feedback loop}
 
@@ -467,7 +467,7 @@ All six state variables are therefore bounded, and the bounds define a compact p
 \end{proof}
 
 \begin{remark}
-Propositions~\ref{prop:nonneg} and \ref{prop:bounded} together guarantee that the IVFS system is well-posed: solutions exist for all forward time, remain nonneg\-ative, and stay bounded. This is a necessary prerequisite for the equilibrium and stability analysis that follows.
+Propositions~\ref{prop:nonneg} and \ref{prop:bounded} together guarantee that the IVFS system is well-posed: solutions exist for all forward time, remain nonneg\-ative, and stay bounded. This lets us do the equilibrium and stability analysis that follows.
 \end{remark}
 
 \subsection{Disease-free equilibrium and threshold}
@@ -493,7 +493,7 @@ When $\mathcal{R}_0 < 1$, this eigenvalue is negative. The remaining five eigenv
 all of which are strictly negative since every parameter is positive. Hence the DFE is locally asymptotically stable. When $\mathcal{R}_0 > 1$, the $V$ eigenvalue is positive and the DFE is unstable.
 \end{proof}
 
-The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This bifurcation structure is the standard one for epidemic-type compartmental models; a formal center-manifold coefficient calculation confirming the forward direction remains as future work.
+The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This is the standard bifurcation structure for epidemic-type compartmental models; a formal center-manifold coefficient calculation confirming the forward direction remains as future work.
 
 Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots $\mathcal{R}_0$ as a function of $\alpha$, with the threshold at $\mathcal{R}_0 = 1$ clearly marked. Panel~(b) shows the equilibrium viral volume $V^*$ computed by integrating the full ODE to steady state for each value of~$\alpha$. The sharp onset at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the subsequent growth of $V^*$ illustrate the transcritical bifurcation.
 
@@ -523,12 +523,12 @@ A fully symbolic proof of local asymptotic stability of the positive equilibrium
 \subsection{Sensitivity analysis}
 \label{sec:sensitivity}
 
-Sensitivity analysis quantifies how the model outputs respond to changes in the parameters. Following the course material, we define the \emph{normalized sensitivity index} of a quantity $x$ with respect to a parameter $p$ as:
+We now check how sensitive the model outputs are to parameter changes. Following the course material, we define the \emph{normalized sensitivity index} of a quantity $x$ with respect to a parameter $p$ as:
 \begin{equation}
 S(x, p) = \frac{\partial x}{\partial p} \cdot \frac{p}{x}.
 \label{eq:sensitivity}
 \end{equation}
-This dimensionless quantity measures the proportional change in $x$ per proportional change in $p$.
+This measures the proportional change in $x$ per proportional change in $p$.
 
 We compute the sensitivity of $\mathcal{R}_0$ with respect to the key parameters analytically. Since
 \[
@@ -540,7 +540,7 @@ S(\mathcal{R}_0, \alpha) &= +1, \\
 S(\mathcal{R}_0, \beta_0) &= +1, \\
 S(\mathcal{R}_0, \gamma_0) &= -\frac{\gamma_0}{\gamma_0 + \mu_c} \approx -0.968.
 \end{align*}
-These indices have natural interpretations: $\mathcal{R}_0$ is directly proportional to both the amplification level $\alpha$ and the base spread rate $\beta_0$ (unit elasticity), and nearly inversely proportional to the base fatigue rate $\gamma_0$. The critical threshold $\alpha_{\mathrm{crit}}$ therefore shifts proportionally with $\gamma_0/\beta_0$: faster fatigue raises the bar for self-sustaining virality, and faster base spread lowers it.
+In practice: $\mathcal{R}_0$ is directly proportional to both the amplification level $\alpha$ and the base spread rate $\beta_0$ (unit elasticity), and nearly inversely proportional to the base fatigue rate $\gamma_0$. The critical threshold $\alpha_{\mathrm{crit}}$ therefore shifts proportionally with $\gamma_0/\beta_0$: faster fatigue raises the bar for self-sustaining virality, and faster base spread lowers it.
 
 For the long-run equilibrium quantities $V^*$, $\tau^*$, and $U^*$, we compute sensitivity indices numerically by perturbing each parameter by $\pm 1\%$ and measuring the proportional response. The numerical sensitivity table is reported in Table~\ref{tab:sens}.
 
@@ -564,12 +564,12 @@ $w$ & $-0.02$ & $-0.02$ & $-0.275$ \\
 \end{tabular}
 \end{table}
 
-Several indices have magnitude greater than one (``super-elastic''). This is expected above the transcritical bifurcation: the nonlinear mass-action feedback loop amplifies small parameter perturbations, so that a $1\%$ change in a parameter can produce more than a $1\%$ change in the equilibrium quantity.
+Some indices exceed one in magnitude. Above the transcritical bifurcation, the nonlinear feedback amplifies small parameter perturbations, so a $1\%$ change in a parameter can shift the equilibrium by more than $1\%$.
 
-The key findings from the sensitivity analysis are:
+The main takeaways are:
 \begin{enumerate}[leftmargin=1.5em]
     \item The equilibrium viral volume $V^*$ is most sensitive to $\gamma_0$ ($S \approx -2.59$), followed by $\alpha$ and $\beta_0$ ($S \approx +1.67$ each). These are all spread-side parameters, which confirms that the spread calibration is the most important empirical anchor.
-    \item The pressure parameters $\phi$ and $\psi$ have essentially no effect on $V^*$ but have unit-elastic effects on $\tau^*$ ($S \approx \pm 1.00$). This makes physical sense: at equilibrium, $\tau^* = \phi V^*/\psi$, so $\tau^*$ is directly proportional to $\phi$ and inversely proportional to $\psi$, while $V^*$ is determined primarily by the spread-side balance.
+    \item The pressure parameters $\phi$ and $\psi$ have essentially no effect on $V^*$ but have unit-elastic effects on $\tau^*$ ($S \approx \pm 1.00$). This makes sense: at equilibrium, $\tau^* = \phi V^*/\psi$, so $\tau^*$ is directly proportional to $\phi$ and inversely proportional to $\psi$, while $V^*$ is determined primarily by the spread-side balance.
     \item The user pool $U^*$ shows moderate sensitivity to the pressure parameters ($S \approx -0.28$ for $\phi$, $+0.28$ for $\psi$) and to the pressure-attrition coupling $w$ ($S \approx -0.28$). This reflects the pressure-dependent user attrition channel: more pressure drives more users away.
     \item The pressure-amplification coupling $\kappa$ has surprisingly small sensitivity ($S \approx 0.05$), indicating that the direct pressure-to-spread feedback is a second-order effect relative to the base spread parameters.
 \end{enumerate}
@@ -685,7 +685,7 @@ To verify that the lifecycle structure in the IVFS model is empirically justifie
 
 The interpretation of $\tau$ is one of the most important modelling decisions in this project. We define $\tau(t)$ as a \emph{latent} discussion-pressure state, not as directly observed text toxicity. The Higgs dataset contains no tweet text, so direct toxicity measurement is not possible. Instead, we use same-dataset reply activity (RE) as the primary proxy for discussion pressure.
 
-The reasoning is straightforward: replies on social media are more likely to represent active discussion (including heated or contentious exchanges) than retweets (which are primarily a spreading mechanism) or mentions (which may be purely informational). High reply volume during a viral event is therefore a plausible indicator of elevated discussion pressure, even without text-level toxicity labels.
+Replies on social media are more likely to represent active discussion (including heated or contentious exchanges) than retweets (which are primarily a spreading mechanism) or mentions (which may be purely informational). High reply volume during a viral event is therefore a plausible indicator of elevated discussion pressure, even without text-level toxicity labels.
 
 We construct a proxy family and select the best-supported target:
 \begin{itemize}[leftmargin=1.5em]
@@ -816,7 +816,7 @@ Figure~\ref{fig:phisens} shows the results. Across the entire tested range of $\
 \label{fig:phisens}
 \end{figure}
 
-Since the pressure parameters are only partially identified, this robustness check matters: the qualitative policy ranking holds across a wide range of $\phi$ values, giving the main conclusions more stability than the individual parameter estimates alone would suggest.
+Because the pressure parameters are only partially identified, it matters that the qualitative policy ranking holds across a wide range of $\phi$ values. This gives the main conclusions more stability than the individual parameter estimates alone would suggest.
 
 \subsection{Multi-window validation}
 \label{sec:windowval}
@@ -872,7 +872,7 @@ The following limitations apply to the present model and analysis, listed roughl
     \item \textbf{DFE-based $\mathcal{R}_0$.} The basic reproduction number is derived from linearization at the DFE. A full next-generation matrix derivation would strengthen this result and clarify the roles of the different model components.
 \end{enumerate}
 
-These limitations qualify the scope of the model, but they do not undermine its main qualitative conclusions. The finding that increased amplification raises pressure and lowers retention is robust across pressure configurations (Section~\ref{sec:sensitivity}), and the threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$ is tightly estimated.
+These are real limitations, but the main qualitative conclusions still hold. The finding that increased amplification raises pressure and lowers retention is robust across pressure configurations (Section~\ref{sec:sensitivity}), and the threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$ is tightly estimated.
 
 
 % ============================================================
@@ -910,12 +910,12 @@ We have developed and analyzed a deterministic compartmental ODE model for conte
 
 \subsection{Significance}
 
-The main contribution of this project is the content-centric modelling perspective. By compartmentalizing content lifecycle states rather than user behavioural states, we obtain a model that operates at the level where platform data and platform policy decisions are most naturally expressed. The model demonstrates that a simple six-state ODE system, calibrated on a single real event cascade, is sufficient to capture the essential amplification and health tradeoff and to produce a quantitative threshold for self-sustaining virality.
+The main idea in this project is the content-centric modelling perspective. By compartmentalizing content lifecycle states rather than user behavioural states, we obtain a model that operates at the level where platform data and platform policy decisions are most naturally expressed. The model shows that a six-state ODE system, calibrated on one real event cascade, can capture the amplification-health tradeoff and produce a quantitative threshold for self-sustaining virality.
 
 \subsection{Next steps}
 \label{sec:nextsteps}
 
-We identify the following directions for extending this work:
+Some directions for future work:
 
 \begin{enumerate}[leftmargin=1.5em]
     \item \textbf{Next-generation matrix for $\mathcal{R}_0$.} The current threshold is derived from DFE linearization of the $\dot{V}$ equation. A full next-generation matrix derivation would provide a more rigorous foundation and clarify the roles of the different model components in the reproduction number.
