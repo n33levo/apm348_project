@@ -144,9 +144,16 @@ def main():
     # nu -> U  (external inflow from below)
     straight(ax, (C['U'][0], 0.65), edge('U', 'b'),
              r'$\nu$', (C['U'][0] + 0.50, 1.05), CLR['user'])
-    # tau -> F  (gamma_0 feedback, straight across the open corridor)
-    straight(ax, edge('T', 'l'), edge('F', 'r'),
-             r'$\gamma_0(1+\eta\tau)$', (9.85, 5.30), CLR['fb'])
+    # tau modulates V->F rate (feedback arrow targets midpoint of V->F edge)
+    vf_mid = ((C['V'][0] + BOX_W / 2 + C['F'][0] - BOX_W / 2) / 2,
+              C['V'][1] - BOX_H / 2)  # bottom of V->F midpoint
+    routed(ax,
+           [edge('T', 'l'),
+            (edge('T', 'l')[0] - 0.3, edge('T', 'l')[1]),
+            (edge('T', 'l')[0] - 0.3, vf_mid[1] - 0.6),
+            (vf_mid[0], vf_mid[1] - 0.6),
+            vf_mid],
+           r'$\gamma_0(1+\eta\tau)$', (9.1, 4.15), CLR['fb'])
 
     # === ROUTED ARROWS (explicit orthogonal waypoints) ========================
 

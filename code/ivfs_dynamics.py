@@ -102,7 +102,7 @@ def run_continuation(beta0: float,
 
 
 def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
-    """bump each param +/-1% and compute local sensitivity indices"""
+    """Central finite-difference sensitivity indices (average of +/-1% perturbations)."""
     a_loss = DELTA + MU_C
     u_dfe = NU / LAMBDA_U
     i_dfe = RHO * u_dfe / ((1.0 + u_dfe) * a_loss)
@@ -115,11 +115,18 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
 
     v_base, tau_base, u_base = get_eq(full_ivfs_ode)
 
+    def _elasticity(v_lo, v_hi, base, dp_frac=0.02):
+        """Central-difference elasticity: S = (x_hi - x_lo) / (2*dp) * (p/x_base)."""
+        if abs(base) < 1e-12:
+            return 0.0
+        return ((v_hi - v_lo) / base) / dp_frac
+
     # --- parameters passed inside the ODE (kappa, eta, phi, psi, w) ---
     internal_params = {'kappa': KAPPA, 'eta': ETA, 'phi': PHI, 'psi': PSI, 'w': W}
     rows = []
     for name, base_val in internal_params.items():
-        for factor, label in [(0.99, '-1%'), (1.01, '+1%')]:
+        results = {}
+        for factor in (0.99, 1.01):
             ov = {name: base_val * factor}
 
             def ode_mod(y, t, a, b, g, _ov=ov):
@@ -129,33 +136,32 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
                                  RHO, LAMBDA_U, NU, MU_C, DELTA,
                                  _ov.get('w', W))
 
-            v_mod, tau_mod, u_mod = get_eq(ode_mod)
-            dv = v_mod - v_base
-            dtau = tau_mod - tau_base
-            du = u_mod - u_base
-            frac_change = factor - 1.0
-            v_si = (dv / v_base) / frac_change if v_base > 1e-12 else 0.0
-            tau_si = (dtau / tau_base) / frac_change if tau_base > 1e-12 else 0.0
-            u_si = (du / u_base) / frac_change if abs(u_base) > 1e-12 else 0.0
-            rows.append((name, label, base_val * factor, dv, dtau, du, v_si, tau_si, u_si))
+            results[factor] = get_eq(ode_mod)
+
+        v_lo, tau_lo, u_lo = results[0.99]
+        v_hi, tau_hi, u_hi = results[1.01]
+        v_si = _elasticity(v_lo, v_hi, v_base)
+        tau_si = _elasticity(tau_lo, tau_hi, tau_base)
+        u_si = _elasticity(u_lo, u_hi, u_base)
+        rows.append((name, v_si, tau_si, u_si))
 
     # --- parameters passed as ODE args (alpha, beta0, gamma0) ---
     arg_params = {'alpha': alpha, 'beta0': beta0, 'gamma0': gamma0}
     for name, base_val in arg_params.items():
-        for factor, label in [(0.99, '-1%'), (1.01, '+1%')]:
+        results = {}
+        for factor in (0.99, 1.01):
             new_val = base_val * factor
             a_ov = new_val if name == 'alpha' else alpha
             b_ov = new_val if name == 'beta0' else beta0
             g_ov = new_val if name == 'gamma0' else gamma0
-            v_mod, tau_mod, u_mod = get_eq(full_ivfs_ode, alpha_ov=a_ov, beta0_ov=b_ov, gamma0_ov=g_ov)
-            dv = v_mod - v_base
-            dtau = tau_mod - tau_base
-            du = u_mod - u_base
-            frac_change = factor - 1.0
-            v_si = (dv / v_base) / frac_change if v_base > 1e-12 else 0.0
-            tau_si = (dtau / tau_base) / frac_change if tau_base > 1e-12 else 0.0
-            u_si = (du / u_base) / frac_change if abs(u_base) > 1e-12 else 0.0
-            rows.append((name, label, new_val, dv, dtau, du, v_si, tau_si, u_si))
+            results[factor] = get_eq(full_ivfs_ode, alpha_ov=a_ov, beta0_ov=b_ov, gamma0_ov=g_ov)
+
+        v_lo, tau_lo, u_lo = results[0.99]
+        v_hi, tau_hi, u_hi = results[1.01]
+        v_si = _elasticity(v_lo, v_hi, v_base)
+        tau_si = _elasticity(tau_lo, tau_hi, tau_base)
+        u_si = _elasticity(u_lo, u_hi, u_base)
+        rows.append((name, v_si, tau_si, u_si))
 
     return v_base, tau_base, u_base, rows
 
@@ -267,8 +273,9 @@ def build_tau_configurations(beta0: float,
     # Reference-constrained fit.
     # The external reference fixes r = phi/psi = tau_ref / V*_moderate, which
     # constrains (phi, psi) to the line phi = r*psi.  Any point on that line
-    # produces the SAME long-run tau* = r*V*, so the external and
-    # reference-constrained configs share identical long-run policy outcomes.
+    # produces the same long-run tau* = r*V* to leading order, so the external
+    # and reference-constrained configs share nearly identical long-run policy
+    # outcomes (the residual difference is second-order via the kappa*tau feedback).
     # Within the constraint, psi is the single free parameter; we optimise it
     # over [psi_lo, phi_hi/r] for the best weighted proxy-fit quality.
     # This is strictly better than the earlier ad hoc cross-anchoring, which

@@ -163,7 +163,7 @@ def main() -> None:
         print(f'MT-RT correlation in window: {mt_rt_corr:.4f}')
 
     print()
-    print('Baseline scenario long-run values (integrated to t=500; current fixed tau setup):')
+    print('Baseline scenario long-run values (integrated to t=2000; current fixed tau setup):')
     for label, data in scenario_results.items():
         r0_val = data['alpha'] * beta0 * i_dfe / (gamma0 + MU_C)
         print(
@@ -229,12 +229,12 @@ def main() -> None:
                 )
 
     print()
-    print('Sensitivity (alpha=0.5, +/-1% each param):')
-    print(f'{"param":<8} {"change":<8} {"value":<8} {"d_V*":<10} {"d_tau*":<10} {"d_U*":<10} {"S_V":<8} {"S_tau":<8} {"S_U":<8}')
+    print('Sensitivity (alpha=0.5, central finite differences +/-1%):')
+    print(f'{"param":<8} {"S_V":<10} {"S_tau":<10} {"S_U":<10}')
     v_base, tau_base, u_base, sens_rows = run_sensitivity(beta0, gamma0)
-    print(f'{"(base)":<8} {"":<8} {"":<8} {v_base:<10.4f} {tau_base:<10.4f} {u_base:<10.4f}')
-    for name, label, val, dv, dtau, du, s_v, s_tau, s_u in sens_rows:
-        print(f'{name:<8} {label:<8} {val:<8.3f} {dv:<+10.4f} {dtau:<+10.4f} {du:<+10.4f} {s_v:<+8.3f} {s_tau:<+8.3f} {s_u:<+8.3f}')
+    print(f'{"(base)":<8} {v_base:<10.4f} {tau_base:<10.4f} {u_base:<10.4f}')
+    for name, s_v, s_tau, s_u in sens_rows:
+        print(f'{name:<8} {s_v:<+10.3f} {s_tau:<+10.3f} {s_u:<+10.3f}')
 
     print()
     w_opt, alpha_peak = find_W_for_interior_Emax(beta0, gamma0)
