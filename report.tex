@@ -96,6 +96,11 @@ The empirical anchor for this project is the SNAP Higgs Twitter dataset \cite{do
 \label{fig:higgs_overview}
 \end{figure}
 
+\subsection{Operational definition of rage-bait}
+\label{sec:ragebait-def}
+
+We define \emph{rage-bait content} operationally as any content that generates disproportionate reply and engagement activity relative to its passive resharing volume---captured in our model by the ratio of discussion pressure~$\tau$ to viral volume~$V$. This is a model-level definition, not a colloquial one: content is ``rage-bait'' whenever the pressure-to-virality ratio is elevated, regardless of the topic's political valence or emotional register. The Higgs boson announcement satisfies this definition empirically. During the main cascade, reply and mention activity surges well beyond what the retweet volume alone would predict (Figure~\ref{fig:higgs_overview}b--c), consistent with high-arousal content dynamics in which the event provokes intense discussion, not just passive resharing. This makes the Higgs cascade a valid demonstration dataset for the IVFS model: it exhibits the structural signature---high $\tau/V$---that the model is designed to capture, even though the underlying content is scientific rather than politically provocative.
+
 % ============================================================
 %  2. PREVIOUS MATHEMATICAL MODELS
 % ============================================================
@@ -854,7 +859,7 @@ We identify the following limitations of the present model and analysis. We orga
 
     \item \textbf{Single-event spread calibration.} The spread model is fitted to one main event window from the Higgs dataset. While the multi-window validation (Table~\ref{tab:windowval}) shows that the model shape is robust, the parameter values are specific to this particular cascade. Calibration on additional independent events would strengthen the empirical foundation.
 
-    \item \textbf{No direct text toxicity data.} The Higgs dataset contains no tweet text, so we cannot directly measure the toxicity of the content being spread. The latent pressure variable $\tau$ is linked to reply activity and scaled against an external reference, but it is not the same as observed text toxicity.
+    \item \textbf{Operational definition scope.} The rage-bait definition used here is operationalized through the $\tau/V$ ratio (Section~\ref{sec:ragebait-def}). While this captures the structural signature of high-arousal content, it does not require---or use---direct text-level toxicity labels. Future work should validate the operational definition against datasets with ground-truth toxicity annotations (e.g.\ Jigsaw, Ruddit) to confirm that it generalizes beyond engagement-proxy data.
 
     \item \textbf{Homogeneous mixing.} The model assumes that all content items in a compartment interact identically, ignoring network structure, community effects, and content heterogeneity. Real social media platforms exhibit strong community structure and heterogeneous spreading dynamics.
 
