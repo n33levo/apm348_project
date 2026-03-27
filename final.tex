@@ -19,15 +19,15 @@
 This project studies how platform ranking can drive a tradeoff between short-run engagement and long-run platform health. Prior evidence shows engagement-based algorithms can amplify divisive content \cite{huszar2022,milli2025}, while toxic content can affect user behavior \cite{beknazar2025}. Moral-emotional content also spreads more readily \cite{brady2017}. We model this using a compartmental ODE system where \textbf{content items} (not users) are the primary dynamical units.
 
 \section*{2. Previous Mathematical Models}
-SIR-style models and rumor models \cite{daleyKendall1964} give threshold and stability tools for diffusion, and recent work applies these ideas to social-media spread \cite{liShao2024}. For example, the SVFR model models users' decisions, and so focus on local networks. Toxicity-focused compartment models also exist \cite{maleki2022,addai2025}. The main gap is that most models compartmentalize \emph{users}; our model compartmentalizes \emph{content lifecycle states} and couples them to toxicity and user attrition, describing a more global scale.
+SIR-style models and rumor models \cite{daleyKendall1964} give threshold and stability tools for diffusion, and recent work applies these ideas to social-media spread \cite{liShao2024}. For example, SVFR-type models focus on users' decisions and local network behavior. Toxicity-focused compartment models also exist \cite{maleki2022,addai2025}. The main gap is that most models compartmentalize \emph{users}; our model compartmentalizes \emph{content lifecycle states} and couples them to toxicity and user attrition, working at a more aggregate level.
 
 \section*{3. Proposed Model and Planned Contributions}
 State variables are $I,V,F,S,\tau,U$ for ignored, viral, fatigued, moderated/suppressed content, toxicity, and active users. Core transitions are:
 \[
-\dot{I}=\rho U-\beta_{\mathrm{eff}}IV-(\delta+\mu_c)I,\quad
+\dot{I}=\frac{\rho U}{1+U}-\beta_{\mathrm{eff}}IV-(\delta+\mu_c)I,\quad
 \dot{V}=\beta_{\mathrm{eff}}IV-\gamma_{\mathrm{eff}}V-\mu_cV,\quad
 \dot{F}=\gamma_{\mathrm{eff}}V-\mu_cF,\quad
-\dot{S}=\delta I,
+\dot{S}=\delta I-\mu_cS,
 \]
 \[
 \dot{\tau}=\phi V-\psi\tau,\qquad
@@ -38,7 +38,7 @@ with
 \beta_{\mathrm{eff}}=\alpha\beta_0(1+\kappa\tau),\qquad
 \gamma_{\mathrm{eff}}=\gamma_0(1+\eta\tau).
 \]
-Here $\rho$ is content injection per user, $\mu_c$ natural content decay, and $\delta$ moderation/suppression. Main contribution: a content-centric model that links amplification, toxicity, and user-base dynamics in one system.
+Here $\rho$ is content injection per user, $\mu_c$ natural content decay, and $\delta$ moderation/suppression. The point is a content-centric model that links amplification, toxicity, and user-base dynamics in one system.
 For simplicity, direct moderation is modeled only from $I$ via $\delta I$; an extension can include moderation from $V$ or $F$.
 Natural decay $\mu_c$ represents loss of visibility/attention (content leaving the system), while $S$ tracks explicit moderation removals.
 For the empirical Higgs fit, we use a reduced IVF calibration model for the retweet cascade with a decaying exogenous seed term $\lambda(t)=\lambda_0 e^{-d_\lambda t}$. This improves the data fit for the observed tail without changing the main IVFS policy model written above.
@@ -46,21 +46,23 @@ For the empirical Higgs fit, we use a reduced IVF calibration model for the retw
 \section*{4. Planned Analysis and Simulations}
 \begin{itemize}[leftmargin=1.3em]
 \item \textbf{Calibration data:} SNAP Higgs activity stream \cite{snap}. Verified counts: 563,069 total events, 354,930 retweets, peak at hour 78 with 30,602 RTs.
-\item \textbf{Parameter fitting:} fit a reduced IVF calibration model to a 100-hour normalized retweet window (scale-invariant) using a bounded Powell search with warm starts. The fitted calibration parameters are $\beta_0,\gamma_0,\lambda_0,d_\lambda,V_0$. The full IVFS scenario parameters are then held fixed when we run the policy model. At the moment, the toxicity couplings $\phi,\psi$ are not jointly calibrated from Higgs; Jigsaw is used only as an external reference check, so the toxicity side should be interpreted as scenario-driven rather than fully data-calibrated.
+\item \textbf{Parameter fitting:} fit a reduced IVF calibration model to a 100-hour normalized retweet window (scale-invariant) using a bounded Powell search with warm starts. The fitted calibration parameters are $\beta_0,\gamma_0,\lambda_0,d_\lambda,V_0$. The full IVFS scenario parameters are then held fixed when we run the policy model. On the pressure side, the toxicity couplings $\phi,\psi$ are still not jointly identified from Higgs alone; instead, the current constrained anchor is a reference-constrained fit that uses Higgs replies for proxy shape and Jigsaw only to fix the external scale ratio $\phi/\psi$. So the toxicity side should be interpreted as partially constrained rather than fully data-calibrated.
+\item \textbf{Benchmarking:} compare the reduced IVF helper model against a classical SIR fit on the same normalized Higgs window. In the current run, the IVF helper model gives the stronger spike-region fit ($R^2\approx 0.889$ versus $0.690$ for SIR), supporting the added lifecycle structure.
 \item \textbf{Analytical work:} derive equilibria, a disease-free threshold analogue $\mathcal{R}_0$, and local Jacobian stability conditions.
 \item \textbf{Numerical scenarios:} engagement-first ($\alpha=0.9$), moderate ($\alpha=0.5$), health-first ($\alpha=0.2$), with long horizons (e.g., $t=1000$) for steady values of $V^*,\tau^*,U^*$ and $E=\alpha V^*U^*$. Under the current calibration, the threshold occurs at $\alpha(\mathcal{R}_0=1)\approx 0.316$, so the health-first case is subcritical while the moderate and engagement-first cases remain above threshold.
 \item \textbf{Continuation sweep:} compute long-run $\tau^*(\alpha)$ for $\alpha\in[0.05,1.0]$ and report as continuation evidence (not a formal bifurcation claim unless stability checks support it).
-\item \textbf{Sensitivity:} vary $\kappa,\eta,\phi,\psi,\lambda_u$ to quantify robustness, with particular attention to $\phi$ because toxicity is still scenario-driven. A dedicated $\phi$-sweep now serves as a core robustness check: with $\psi$ fixed, the current model value $\phi=0.056$ is compared against the larger external Jigsaw-implied value $\phi\approx 0.146$. The main qualitative ordering remains stable across this range: engagement-first yields the highest long-run toxicity, moderate remains in the middle, and the health-first case stays suppressed because it is already below the calibrated $\mathcal{R}_0=1$ threshold.
-\item \textbf{Uncertainty quantification:} parametric Poisson bootstrap ($B=500$) gives 95\% CIs for $\beta_0\in[0.9983,1.0021]$, $\gamma_0\in[0.2962,0.3044]$, and $\alpha(\mathcal{R}_0\!=\!1)\in[0.3126,0.3205]$. Local profile-likelihood curves around the optimum show clear minima for both $\beta_0$ and $\gamma_0$, supporting practical identifiability under the current calibration model.
+\item \textbf{Sensitivity:} vary $\kappa,\eta,\phi,\psi,\lambda_u$ to quantify robustness, with particular attention to $\phi$ because toxicity is only partially identified. A dedicated $\phi$-sweep now serves as a core robustness check: with $\psi$ fixed, the current model value $\phi=0.056$ is compared against the larger external Jigsaw-implied value $\phi\approx 0.146$. The main qualitative ordering remains stable across this range: engagement-first yields the highest long-run toxicity, moderate remains in the middle, and the health-first case stays suppressed because it is already below the calibrated $\mathcal{R}_0=1$ threshold. On the tau side, the current constrained anchor is the \emph{reference-constrained} fit: the external reference fixes $r=\phi/\psi$, and then $\psi$ is chosen along the line $\phi=r\psi$ to best match the Higgs reply proxy. In the current run this gives approximately $\phi\approx 0.417$, $\psi\approx 0.286$, with constrained proxy-fit quality $R^2\approx 0.41$.
+\item \textbf{Uncertainty quantification:} parametric Poisson bootstrap ($B=500$) gives 95\% CIs for $\beta_0\in[0.9982,1.0019]$, $\gamma_0\in[0.2964,0.3040]$, and $\alpha(\mathcal{R}_0\!=\!1)\in[0.3129,0.3199]$. Local profile-likelihood curves around the optimum show clear minima for both $\beta_0$ and $\gamma_0$, supporting practical identifiability under the current calibration model.
+\item \textbf{Additional spread validation:} refitting the reduced IVF helper model on three representative 48-hour active windows from the same Higgs event record gives local $R^2$ values between about $0.69$ and $0.95$. The fitted parameters shift across those shorter windows, so the correct interpretation is local burst-decay robustness rather than globally stable event parameters.
 \end{itemize}
 
 \section*{5. Expected Results and Conclusion Plan}
-Current results indicate that higher amplification improves short-run virality but worsens long-run toxicity and user retention. They also suggest a meaningful threshold effect: once $\alpha$ drops below the calibrated $\mathcal{R}_0=1$ boundary, viral activity is no longer self-sustaining. The new $\phi$-robustness check does not remove the toxicity-calibration limitation, but it does show that the main policy ranking is not an artifact of one arbitrary $\phi$ choice. The conclusion will summarize equilibrium and stability findings, compare policy scenarios, discuss implications for platform moderation and ranking policy, and state limitations clearly.
+Current results indicate that higher amplification improves short-run virality but worsens long-run toxicity and user retention. They also suggest a meaningful threshold effect: once $\alpha$ drops below the calibrated $\mathcal{R}_0=1$ boundary, viral activity is no longer self-sustaining. The new $\phi$-robustness and reference-constrained tau analysis do not remove the toxicity-identification limitation, but they do show that the main policy ranking is not an artifact of one arbitrary pressure setting. The additional 48-hour active-window fits likewise suggest that the reduced IVF helper model captures burst-decay behavior across multiple active phases of the same event record, even though the shorter-window parameters are not constant. The conclusion will summarize equilibrium and stability findings, compare policy scenarios, discuss implications for platform moderation and ranking policy, and state limitations clearly.
 
 \paragraph{Limitations.}
 Homogeneous mixing, deterministic dynamics, and single-index toxicity are the main structural simplifications.
-The fitted $\beta_0,\gamma_0$ and calibration-side seed parameters are estimated from a single Higgs cascade, so the empirical spread fit is stronger than the toxicity fit. In particular, toxicity is still scenario-driven rather than jointly calibrated from the same dataset, and the Jigsaw comparison should be treated as an external reference rather than a direct platform match. The current $\phi$-sweep should therefore be read as a robustness argument, not as a substitute for true same-dataset toxicity calibration. Even so, the bootstrap intervals are narrow and the local profile curves show well-defined minima for both $\beta_0$ and $\gamma_0$, lending practical identifiability support for the spread component.
-Extensions to network-aware and stochastic models are natural next steps.
+The fitted $\beta_0,\gamma_0$ and calibration-side seed parameters are estimated from a single main Higgs window, so the empirical spread fit is stronger than the toxicity fit. Additional 48-hour active-window refits support the helper model's local burst-decay shape, but they do not imply globally stable parameters across the whole record. In particular, toxicity is still only partially identified from the same dataset: the reference-constrained fit gives the best $(\phi,\psi)$ pair consistent with the external scale, but the Jigsaw comparison remains an external reference rather than a direct platform match. The current $\phi$-sweep and reference-constrained tau fit should therefore be read as robustness and constrained-calibration arguments, not as substitutes for true same-dataset toxicity labels. Even so, the bootstrap intervals are narrow and the local profile curves show well-defined minima for both $\beta_0$ and $\gamma_0$, lending practical identifiability support for the spread component.
+Network-aware and stochastic extensions are obvious follow-ups.
 
 \begingroup
 \footnotesize
@@ -89,7 +91,7 @@ Algorithmic amplification of politics on Twitter.
 \bibitem{milli2025}
 S.~Milli, M.~Carroll, Y.~Wang, S.~Pandey, S.~Zhao, and A.~Dragan.
 Engagement, user satisfaction, and the amplification of divisive content on social media.
-\textit{PNAS Nexus}, 4(1):pgae594, 2025.
+PNAS Nexus, 4(3):pgaf062, 2025.
 
 \bibitem{beknazar2025}
 G.~Beknazar-Yuzbashev, R.~Jim\'{e}nez~Dur\'{a}n, J.~McCrosky, and M.~Stalinski.
@@ -115,6 +117,16 @@ Modeling and simulation of interventions' effect on the spread of toxicity in so
 Y.~Jing, H.~Wang, and Z.~Zhang.
 Improved SIR advertising spreading model and its effectiveness in social network.
 \textit{Procedia Computer Science}, 129:215--218, 2018.
+
+\bibitem{domenico2013}
+M.~De Domenico, A.~Lima, P.~Mougel, and M.~Musolesi.
+The anatomy of a scientific rumor.
+\textit{Scientific Reports}, 3:2980, 2013.
+
+\bibitem{borkan2019}
+D.~Borkan, L.~Dixon, J.~Sorensen, N.~Thain, and L.~Vasserman.
+Nuanced metrics for measuring unintended bias with real data for text classification.
+In \textit{Proc.\ WWW Companion}, 2019.
 
 \end{thebibliography}
 \endgroup

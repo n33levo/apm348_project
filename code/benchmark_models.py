@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""fit SIR to the same higgs data and compare it to our IVF"""
+"""Fit SIR to the same Higgs data and compare it to our IVF model"""
 
 import sys
 from pathlib import Path
@@ -43,7 +43,7 @@ def simulate_basic_sir(beta: float, gamma: float, i0_fit: float, n_steps: int) -
 def fit_basic_sir(v_empirical_norm: np.ndarray,
                   window_counts: np.ndarray | None = None,
                   n_steps: int | None = None) -> tuple[float, float, float, float, np.ndarray]:
-    """fit SIR with 3 params (beta, gamma, i0) using poisson weights"""
+    """Fit SIR with 3 params (beta, gamma, i0) using Poisson weights"""
     t_data = np.arange(len(v_empirical_norm), dtype=float)
     if window_counts is not None:
         weights = 1.0 / (np.sqrt(window_counts) + 1.0)
@@ -94,7 +94,7 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
-    # panel 1 -- compare both fits on the same primary calibration window
+    # Panel 1 -- comparing both fits on the primary calibration window
     x = np.arange(len(empirical_norm))
     smooth = np.convolve(empirical_norm, np.ones(3) / 3.0, mode='same')
     corr = float(np.corrcoef(ivf_fit, sir_fit)[0, 1])
@@ -122,7 +122,7 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
         'Health-First (alpha=0.2)': '#2E7D32',
     }
 
-    # panel 2 -- discussion pressure, SIR can't do this
+    # Panel 2 -- discussion pressure, SIR can't capture this
     for label, data in scenario_results.items():
         axs[1].plot(t_scenario, data['solution'][:, 4], linewidth=2.0,
                     color=colors[label], label=label)
@@ -134,7 +134,7 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
     axs[1].set_ylim(bottom=0)
     axs[1].legend(fontsize=8)
 
-    # panel 3 -- user retention, also not in SIR
+    # Panel 3 -- user retention, also not captured by SIR
     for label, data in scenario_results.items():
         axs[2].plot(t_scenario, data['solution'][:, 5], linewidth=2.0,
                     color=colors[label], label=label)
@@ -171,7 +171,7 @@ def main() -> None:
         n_steps=len(empirical_norm),
     )
 
-    # run the IVFS scenarios -- this is what SIR can't do
+    # Running the IVFS scenarios -- this is what SIR can't capture
     t_scenario, scenario_results = run_scenarios(beta_ivf, gamma_ivf)
 
     spike_end = min(SPIKE_WINDOW_HOURS, len(empirical_norm))
@@ -196,9 +196,6 @@ def main() -> None:
     print(f'IVF spike R\u00B2 (0-{spike_end - 1}h): {ivf_r2:.4f}, tail mean bias (40-99h): {ivf_tail:+.4f}')
     print(f'SIR spike R\u00B2 (0-{spike_end - 1}h): {sir_r2:.4f}, tail mean bias (40-99h): {sir_tail:+.4f}')
     print(f'Saved figure: {FIGURE_PATH}')
-    print()
-    print('Across the full Higgs window, IVF now fits the spike and late tail much better than SIR.')
-    print('IVFS additionally carries discussion-pressure and user-retention dynamics that SIR cannot represent.')
 
 
 if __name__ == '__main__':

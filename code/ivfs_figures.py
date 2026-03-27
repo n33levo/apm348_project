@@ -14,7 +14,9 @@ from ivfs_config import (DIAG_FIGURE_PATH, DISPLAY_WINDOW_HOURS, FIGURE_PATH, PH
 
 
 def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
-                            re_window, reply_proxy,
+                            re_window, mt_window, tau_proxy,
+                            re_proxy, ratio_proxy,
+                            selected_proxy, selected_proxy_label,
                             fit_window_hours,
                             weighted_loss, r2_fit, r2_full, r2_spike, tail_bias):
     """2x2 calibration diagnostics -- compare what was fit vs what is only extrapolated"""
@@ -84,31 +86,45 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
         bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
     axs[0, 1].legend(fontsize=8)
 
-    if re_window is not None and reply_proxy is not None:
+    if re_window is not None and selected_proxy is not None:
         t_re = np.arange(len(re_window))
         re_norm = re_window / (np.max(re_window) + 1e-12)
-        proxy_norm = reply_proxy / (np.max(reply_proxy) + 1e-12)
+        selected_proxy_norm = selected_proxy / (np.max(selected_proxy) + 1e-12)
         rt_reference = empirical_smooth / (np.max(empirical_smooth) + 1e-12)
         re_corr = float(np.corrcoef(re_window[:fit_end], window_counts[:fit_end])[0, 1])
+        selected_key = str(selected_proxy_label).strip().lower()
 
         axs[1, 0].bar(t_re, re_norm, alpha=0.35, color='#7B1FA2',
                       label='RE events (normalized)')
-        axs[1, 0].plot(t_re, proxy_norm, color='#4A148C', linewidth=2.0,
-                       label='Reply proxy (smoothed RE activity)')
+        if mt_window is not None:
+            mt_norm = mt_window / (np.max(mt_window) + 1e-12)
+            axs[1, 0].plot(t_re, mt_norm, color='#00897B', linewidth=1.5,
+                           label='MT events (normalized)')
+        if re_proxy is not None and selected_key != 're proxy':
+            axs[1, 0].plot(t_re, re_proxy, color='#5E35B1', linewidth=1.6,
+                           label='RE proxy')
+        if ratio_proxy is not None and selected_key != 're/(rt+1) proxy':
+            axs[1, 0].plot(t_re, ratio_proxy, color='#FB8C00', linewidth=1.6,
+                           label='RE/(RT+1) proxy')
+        if tau_proxy is not None and selected_key != 'composite proxy':
+            axs[1, 0].plot(t_re, tau_proxy, color='#6D4C41', linewidth=1.6,
+                           label='Composite proxy')
+        axs[1, 0].plot(t_re, selected_proxy_norm, color='black', linewidth=2.2,
+                       label=f'Selected proxy ({selected_proxy_label})')
         axs[1, 0].plot(t_data, rt_reference, color='#455A64', linewidth=1.8, linestyle='--',
                        label='RT reference (smoothed)')
         axs[1, 0].set_xlim(0, zoom_end)
         axs[1, 0].set_ylim(bottom=0)
-        axs[1, 0].set_title('(c) Reply-Pressure Proxy (Higgs RE Activity)')
+        axs[1, 0].set_title('(c) Selected Same-Dataset Pressure Proxy')
         axs[1, 0].set_xlabel('Hour index')
-        axs[1, 0].set_ylabel('Normalized reply activity')
+        axs[1, 0].set_ylabel('Normalized proxy level')
         re_total = int(np.sum(re_window))
         axs[1, 0].annotate(
             f'RE events in window: {re_total:,}\n'
             f'corr(RE, RT) over fit window = {re_corr:.4f}',
-            xy=(0.04, 0.84), xycoords='axes fraction', fontsize=9,
+            xy=(0.56, 0.34), xycoords='axes fraction', fontsize=9,
             bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
-        axs[1, 0].legend(fontsize=8, loc='lower right')
+        axs[1, 0].legend(fontsize=8, loc='upper right', bbox_to_anchor=(0.97, 0.97))
     else:
         axs[1, 0].text(0.5, 0.5, 'No RE data available', transform=axs[1, 0].transAxes,
                        ha='center', va='center', fontsize=12, color='gray')
@@ -129,48 +145,83 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
     axs[1, 1].set_ylabel('Residual')
     axs[1, 1].legend(fontsize=8)
 
-    fig.suptitle('APM348 IVFS Calibration Diagnostics', fontsize=14, fontweight='bold', y=1.01)
+    fig.suptitle('IVFS Spread Calibration Diagnostics (Higgs Retweet Window)', fontsize=14, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(DIAG_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
-def make_tau_comparison_figure(reply_proxy: np.ndarray,
+def make_tau_comparison_figure(selected_proxy: np.ndarray,
+                               selected_proxy_label: str,
                                re_window: np.ndarray | None,
                                tau_configs: dict[str, dict]) -> None:
-    """compare the RE proxy against the current, Higgs-fit, and external tau setups"""
+    """Compare the selected proxy against baseline, same-dataset, and external tau setups"""
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 2, figsize=(14, 5.5))
-    t_data = np.arange(len(reply_proxy))
+    t_data = np.arange(len(selected_proxy))
 
     if re_window is not None:
         re_norm = re_window / (np.max(re_window) + 1e-12)
         axs[0].bar(t_data, re_norm, alpha=0.25, color='#9575CD', label='RE events (normalized)')
-    axs[0].plot(t_data, reply_proxy, color='black', linewidth=2.3, label='Empirical reply-pressure proxy')
+    axs[0].plot(t_data, selected_proxy, color='black', linewidth=2.3,
+                label=f'Selected proxy ({selected_proxy_label})')
     for cfg in tau_configs.values():
         axs[0].plot(t_data, cfg['tau_curve'], linewidth=2.0, color=cfg['color'], label=cfg['label'])
-    axs[0].set_title('(a) Higgs Reply-Pressure Proxy Fit')
+    axs[0].set_title('(a) Higgs Latent-Pressure Proxy Fit')
     axs[0].set_xlabel('Hour index in 100-hour window')
-    axs[0].set_ylabel('Normalized discussion pressure')
+    axs[0].set_ylabel('Normalized latent pressure')
     axs[0].set_ylim(bottom=0)
     axs[0].legend(fontsize=8)
 
     scenario_order = list(SCENARIO_ALPHAS.keys())[::-1]
     x = np.arange(len(scenario_order), dtype=float)
-    width = 0.24
-    offsets = np.linspace(-width, width, len(tau_configs))
-    for offset, cfg in zip(offsets, tau_configs.values()):
+    bar_items = list(tau_configs.items())
+    if 'external' in tau_configs and 'reference_constrained' in tau_configs:
+        bar_items = [(key, cfg) for key, cfg in tau_configs.items() if key != 'reference_constrained']
+    width = min(0.18, 0.72 / max(len(bar_items), 1))
+    offsets = (np.arange(len(bar_items), dtype=float) - 0.5 * (len(bar_items) - 1)) * width
+    for offset, (_key, cfg) in zip(offsets, bar_items):
         tau_vals = [max(0.0, float(cfg['scenario_results'][label]['tau_star'])) for label in scenario_order]
         axs[1].bar(x + offset, tau_vals, width=width, color=cfg['color'], alpha=0.9, label=cfg['label'])
+        zero_mask = [val < 1e-8 for val in tau_vals]
+        if any(zero_mask):
+            zero_x = [xpos + offset for xpos, is_zero in zip(x, zero_mask) if is_zero]
+            axs[1].plot(
+                zero_x,
+                [0.0] * len(zero_x),
+                linestyle='None',
+                marker='o',
+                markersize=4,
+                markerfacecolor='white',
+                markeredgewidth=1.2,
+                markeredgecolor=cfg['color'],
+                zorder=5,
+            )
     axs[1].set_xticks(x)
     axs[1].set_xticklabels(['Health-First', 'Moderate', 'Engagement-First'])
     axs[1].set_title('(b) Long-Run Discussion Pressure $\\tau^*$ by Policy')
     axs[1].set_xlabel('Policy scenario')
     axs[1].set_ylabel('$\\tau^*$')
     axs[1].set_ylim(bottom=0)
-    axs[1].legend(fontsize=8)
+    axs[1].annotate(
+        'Health-First is subcritical in all\nsetups, so $\\tau^* \\approx 0$.',
+        xy=(x[0], 0.0), xycoords='data',
+        xytext=(x[0] - 0.45, 0.028), textcoords='data',
+        fontsize=8,
+        ha='left',
+        bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.8),
+        arrowprops=dict(arrowstyle='-', color='gray', linewidth=0.8),
+    )
+    if 'external' in tau_configs and 'reference_constrained' in tau_configs:
+        axs[1].text(
+            0.56, 0.96,
+            'Ref.-constrained is omitted in panel (b):\nit shares the same long-run $\\tau^*$ as external\n(same $\\phi/\\psi$) and differs only in panel (a).',
+            transform=axs[1].transAxes, fontsize=7, ha='center', va='top',
+            bbox=dict(boxstyle='round,pad=0.3', fc='lightyellow', alpha=0.85),
+        )
+    axs[1].legend(fontsize=8, loc='upper left', bbox_to_anchor=(0.0, 0.86))
 
-    fig.suptitle('APM348 Tau-Side Comparison (Higgs Proxy + External Reference)', fontsize=13, fontweight='bold', y=1.02)
+    fig.suptitle('Discussion-Pressure Proxy Comparison (Same-Dataset Reply + External Toxicity Reference)', fontsize=13, fontweight='bold', y=1.02)
     fig.tight_layout(pad=2)
     fig.savefig(TAU_COMPARE_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -245,7 +296,7 @@ def make_results_figure(t_scenario, scenario_results,
     axs[1, 2].set_ylabel('E*')
     axs[1, 2].legend(fontsize=8)
 
-    fig.suptitle('APM348 IVFS Policy Scenarios', fontsize=14, fontweight='bold', y=1.01)
+    fig.suptitle('IVFS Policy Scenarios and Continuation Analysis', fontsize=14, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -256,7 +307,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
                                 current_phi: float,
                                 external_phi: float | None = None,
                                 external_source: str | None = None) -> None:
-    """save a small robustness figure for the toxicity coupling PHI"""
+    """Save a small robustness figure for the toxicity coupling PHI"""
     plt.style.use('ggplot')
     fig, axs = plt.subplots(1, 2, figsize=(12.5, 4.8))
 
@@ -289,7 +340,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
     axs[1].set_ylabel('$U^*$')
     axs[1].legend(fontsize=8)
 
-    fig.suptitle('APM348 PHI Sensitivity (Discussion-Pressure Block)', fontsize=13, fontweight='bold', y=1.02)
+    fig.suptitle('Pressure Forcing Sensitivity ($\phi$ Robustness)', fontsize=13, fontweight='bold', y=1.02)
     fig.tight_layout(pad=2)
     fig.savefig(PHI_SENS_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -297,7 +348,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
 
 def plot_profile(beta_grid, profile_beta, gamma_grid, profile_gamma,
                  beta0_best, gamma0_best) -> None:
-    """save the profile likelihood plots"""
+    """Save the profile likelihood plots"""
     plt.style.use('ggplot')
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
     beta_excess = profile_beta - float(np.min(profile_beta))

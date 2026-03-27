@@ -15,7 +15,7 @@ HIGGS_GZ = DATA_DIR / 'higgs-activity_time.txt.gz'
 HIGGS_TXT = DATA_DIR / 'higgs-activity_time.txt'
 HIGGS_URL = 'http://snap.stanford.edu/data/higgs-activity_time.txt.gz'
 
-# matplotlib dumps cache files everywhere so i just shove them in the repo
+# Matplotlib dumps cache files everywhere so I just shove them in the repo
 os.environ.setdefault('MPLCONFIGDIR', str(MPLCONFIG_DIR))
 os.environ.setdefault('XDG_CACHE_HOME', str(XDG_CACHE_HOME))
 
