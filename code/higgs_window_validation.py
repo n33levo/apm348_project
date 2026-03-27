@@ -95,7 +95,7 @@ def make_figure(rows: list[dict[str, float | int | np.ndarray]]) -> None:
         ax.set_ylim(bottom=0)
     axs[0].set_ylabel('Normalized RT volume')
     axs[0].legend(fontsize=8, loc='upper right')
-    fig.suptitle('Additional Higgs Active-Window Validation for the Reduced IVF Fit', fontsize=13, fontweight='bold', y=1.03)
+    fig.suptitle('Representative 48-hour Active-Window Fits for the Reduced IVF Model', fontsize=13, fontweight='bold', y=1.03)
     fig.tight_layout(pad=1.6)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)

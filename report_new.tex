@@ -83,6 +83,7 @@ Our model takes a different approach. Instead of compartmentalizing users, we co
 
 The price of this simplification is that we lose resolution on user heterogeneity and network topology. We treat users as a single aggregate pool $U$ with constant replenishment and pressure-dependent attrition. This is a deliberate modelling choice: it keeps the system tractable (six states rather than dozens) while still capturing the feedback loop between content amplification, discussion pressure, and platform health.
 
+
 % ============================================================
 %  2. PREVIOUS MATHEMATICAL MODELS
 % ============================================================
@@ -179,6 +180,7 @@ The modelling approach follows the DABAR procedure:
 The empirical strategy has two stages. First, we calibrate the spread block using a reduced IVF helper model fitted to the Higgs retweet stream. This stage identifies the spread-side parameters $(\beta_0, \gamma_0, \lambda_0, d_\lambda)$ with narrow confidence intervals. Second, we simulate the full six-state IVFS model under different amplification scenarios to study the policy tradeoff. The pressure block is handled separately: same-dataset reply activity (RE) serves as a proxy for latent discussion pressure, and the Jigsaw toxicity dataset provides an external reference scale for the magnitude of $\tau$, but neither source uniquely pins down the pressure parameters $(\phi, \psi)$.
 
 This two-stage approach is a deliberate modelling choice. It means the spread calibration is clean and well-identified, while the pressure block is honestly reported as partially constrained. We believe this is preferable to forcing a joint calibration that would conflate well-identified and poorly-identified parameters.
+
 
 % ============================================================
 %  5. FORMULATION OF THE MODEL
@@ -343,6 +345,7 @@ This threshold divides the amplification parameter space into two regimes:
 \end{itemize}
 
 We emphasize that this $\mathcal{R}_0$ is computed from linearization of the $\dot{V}$ equation at the DFE. A full next-generation matrix derivation would strengthen this result; we discuss this as a future extension in Section~\ref{sec:nextsteps}.
+
 
 % ============================================================
 %  6. ANALYSIS OF THE MODEL
@@ -704,7 +707,7 @@ Figure~\ref{fig:results} shows the results of a continuation sweep over $\alpha 
 
 \subsection{Pressure sensitivity}
 
-We perform a local sensitivity sweep over the pressure forcing parameter $\phi$ with $\psi$ fixed at its baseline value of $0.1$. The purpose is to check whether the qualitative policy ranking (engagement-first $>$ moderate $>$ health-first in terms of pressure) is robust to changes in $\phi$.
+We perform a local sensitivity sweep over the pressure forcing parameter $\phi$ with $\psi$ fixed at its baseline value of $0.1$. The purpose is to check whether the qualitative policy ranking (engagement-first > moderate > health-first in terms of pressure) is robust to changes in $\phi$.
 
 Figure~\ref{fig:phisens} shows the results. Across the entire tested range of $\phi$, the ordering of the three scenarios is preserved: the engagement-first scenario always produces the highest long-run pressure, the moderate scenario remains in the middle, and the health-first scenario stays at zero pressure because it is subcritical. The baseline value $\phi = 0.056$ and the external-reference value $\phi \approx 0.146$ are both within the range where the qualitative conclusions hold.
 
