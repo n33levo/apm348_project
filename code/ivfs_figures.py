@@ -145,7 +145,7 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
     axs[1, 1].set_ylabel('Residual')
     axs[1, 1].legend(fontsize=8)
 
-    fig.suptitle('APM348 IVFS Calibration Diagnostics', fontsize=14, fontweight='bold', y=1.01)
+    fig.suptitle('IVFS Spread Calibration Diagnostics (Higgs Retweet Window)', fontsize=14, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(DIAG_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -221,7 +221,7 @@ def make_tau_comparison_figure(selected_proxy: np.ndarray,
         )
     axs[1].legend(fontsize=8, loc='upper left', bbox_to_anchor=(0.0, 0.86))
 
-    fig.suptitle('APM348 Tau-Side Comparison (Latent Pressure Proxy + External Reference)', fontsize=13, fontweight='bold', y=1.02)
+    fig.suptitle('Discussion-Pressure Proxy Comparison (Same-Dataset Reply + External Toxicity Reference)', fontsize=13, fontweight='bold', y=1.02)
     fig.tight_layout(pad=2)
     fig.savefig(TAU_COMPARE_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -296,7 +296,7 @@ def make_results_figure(t_scenario, scenario_results,
     axs[1, 2].set_ylabel('E*')
     axs[1, 2].legend(fontsize=8)
 
-    fig.suptitle('APM348 IVFS Policy Scenarios', fontsize=14, fontweight='bold', y=1.01)
+    fig.suptitle('IVFS Policy Scenarios and Continuation Analysis', fontsize=14, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -340,7 +340,7 @@ def make_phi_sensitivity_figure(phi_grid: np.ndarray,
     axs[1].set_ylabel('$U^*$')
     axs[1].legend(fontsize=8)
 
-    fig.suptitle('APM348 PHI Sensitivity (Discussion-Pressure Block)', fontsize=13, fontweight='bold', y=1.02)
+    fig.suptitle('Pressure Forcing Sensitivity ($\phi$ Robustness)', fontsize=13, fontweight='bold', y=1.02)
     fig.tight_layout(pad=2)
     fig.savefig(PHI_SENS_FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
