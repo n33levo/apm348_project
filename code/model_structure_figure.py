@@ -41,10 +41,10 @@ CLR = {
 
 # Box centres
 C = {
-    'I': (1.5, 5.3),
-    'V': (4.0, 5.3),
-    'F': (6.5, 5.3),
-    'S': (4.0, 2.3),
+    'I': (2.5, 5.3),
+    'V': (5.5, 5.3),
+    'F': (8.5, 5.3),
+    'S': (2.5, 2.3),
     'T': (11.2, 5.3),
     'U': (11.2, 2.3),
 }
@@ -115,8 +115,8 @@ def main():
     ax.set_ylim(0, 8.5)
     ax.axis('off')
 
-    ax.plot([8.6, 8.6], [0.55, 8.0], color='#CBD5E1', lw=1.3, ls='--', zorder=0)
-    ax.text(3.5, 8.10, 'Content lifecycle compartments',
+    ax.plot([9.8, 9.8], [0.55, 8.0], color='#CBD5E1', lw=1.3, ls='--', zorder=0)
+    ax.text(4.5, 8.10, 'Content lifecycle compartments',
             fontsize=14, fontweight='bold', color='#1E293B', ha='center')
     ax.text(11.2, 8.10, 'Pressure and user block',
             fontsize=14, fontweight='bold', color='#1E293B', ha='center')
@@ -130,13 +130,14 @@ def main():
 
     # I -> V
     straight(ax, edge('I', 'r'), edge('V', 'l'),
-             r'$\beta_{\mathrm{eff}}IV$', (2.75, 5.88), CLR['spread'])
+             r'$\beta_{\mathrm{eff}}IV$', (4.0, 5.88), CLR['spread'])
     # V -> F
     straight(ax, edge('V', 'r'), edge('F', 'l'),
-             r'$\gamma_{\mathrm{eff}}V$', (5.25, 5.88), CLR['spread'])
-    # V -> S
-    straight(ax, edge('V', 'b'), edge('S', 't'),
-             r'$\delta I$', (4.50, 3.85), CLR['suppress'])
+             r'$\gamma_{\mathrm{eff}}V$', (7.0, 5.88), CLR['spread'])
+    # V -> S  (moderation: delta*I diverts content from I to S)
+    # Actually I -> S, but the original label says delta*I
+    straight(ax, edge('I', 'b'), edge('S', 't'),
+             r'$\delta I$', (3.1, 3.85), CLR['suppress'])
     # tau -> U  (right side of the pressure column)
     straight(ax, edge('T', 'b', 0.65), edge('U', 't', 0.65),
              r'$\lambda_u(1+w\tau)U$', (12.15, 3.85), CLR['user'])
@@ -145,7 +146,7 @@ def main():
              r'$\nu$', (C['U'][0] + 0.50, 1.05), CLR['user'])
     # tau -> F  (gamma_0 feedback, straight across the open corridor)
     straight(ax, edge('T', 'l'), edge('F', 'r'),
-             r'$\gamma_0(1+\eta\tau)$', (8.85, 5.30), CLR['fb'])
+             r'$\gamma_0(1+\eta\tau)$', (9.85, 5.30), CLR['fb'])
 
     # === ROUTED ARROWS (explicit orthogonal waypoints) ========================
 
@@ -156,7 +157,7 @@ def main():
             (C['V'][0], 7.2),
             (C['T'][0], 7.2),
             edge('T', 't')],
-           r'$\phi V$', (7.6, 7.45), CLR['gen'])
+           r'$\phi V$', (8.35, 7.45), CLR['gen'])
 
     # alpha*beta_0*(1+kappa*tau) :  tau -> V  (LOW route, below the box row)
     # tau bottom -> down to y=3.8 -> left to V_bottom_x -> up into V bottom
@@ -167,16 +168,17 @@ def main():
             (tau_bx, 3.8),
             (v_bx, 3.8),
             edge('V', 'b', 0.65)],
-           r'$\alpha\beta_0(1+\kappa\tau)$', (7.6, 3.55), CLR['fb'])
+           r'$\alpha\beta_0(1+\kappa\tau)$', (8.35, 3.55), CLR['fb'])
 
-    # rho*U/(1+U) :  U -> V  (wide route far left, around S)
-    # U left -> left to x=2.0 -> up to V_cy -> right into V left
+    # rho*U/(1+U) :  U -> I  (route BELOW S: U bottom -> down -> left -> up to I left)
+    u_bot = edge('U', 'b', 0.25)
+    i_left = edge('I', 'l', 0.30)
     routed(ax,
-           [edge('U', 'l', 0.30),
-            (2.0, C['U'][1] - 0.22),
-            (2.0, C['V'][1]),
-            edge('V', 'l', 0.30)],
-           r'$\rho U/(1+U)$', (1.2, 3.85), CLR['recruit'])
+           [u_bot,
+            (u_bot[0], 0.85),
+            (i_left[0], 0.85),
+            i_left],
+           r'$\rho U/(1+U)$', (6.5, 0.60), CLR['recruit'])
 
     # === CAPTION ==============================================================
     ax.text(
