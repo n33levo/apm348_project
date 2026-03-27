@@ -6,8 +6,16 @@ __pycache__/
 .mypy_cache/
 .ipynb_checkpoints/
 *.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
 *.log
+*.nav
 *.out
+*.snm
+*.synctex.gz
+*.toc
 code/.mplconfig/
 code/.cache/
 /scratch/

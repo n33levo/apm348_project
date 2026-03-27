@@ -31,7 +31,7 @@
 \title[Rage-Bait Lifecycles]{Content-Centric Modelling of Rage-Bait\\
 Lifecycles on Social Media with Toxicity Feedback}
 \subtitle{APM348 | 10-Minute Presentation}
-\author{Neel Sarkar \and Piper Scott Rios}
+\author{Neel Sarkar \and Piper Scott}
 \institute{University of Toronto}
 \date{April 1, 2026}
 
@@ -101,7 +101,7 @@ Lifecycles on Social Media with Toxicity Feedback}
       \begin{alertblock}{Amplification threshold}
         \[
         \mathcal{R}_0 = \frac{\alpha\,\beta_0\,I_{\mathrm{DFE}}}{\gamma_0 + \mu_c}
-        \qquad \boxed{\alpha_{\mathrm{crit}} \approx 0.32}
+        \qquad \boxed{\alpha_{\mathrm{crit}} \approx 0.3165}
         \]
       \end{alertblock}
 
@@ -165,8 +165,8 @@ Lifecycles on Social Media with Toxicity Feedback}
       \begin{greenblock}{Spread block: well-identified}
         \begin{itemize}
           \item Higgs Twitter retweets, 100\,h window
-          \item $R^2 = 0.92$, narrow bootstrap CIs
-          \item Beats SIR benchmark ($R^2 = 0.69$)
+          \item Spike-window $R^2 = 0.89$; full-window $R^2 = 0.92$
+          \item Beats SIR benchmark ($R^2 = 0.89$ vs.\ $0.69$, spike window)
         \end{itemize}
       \end{greenblock}
     \end{column}
@@ -193,7 +193,7 @@ Lifecycles on Social Media with Toxicity Feedback}
 \begin{frame}{Takeaways}
   \begin{enumerate}
     \item \textbf{Threshold.} A sharp amplification threshold exists
-    ($\alpha_{\mathrm{crit}} \approx 0.32$). Below it, no sustained virality.
+    ($\alpha_{\mathrm{crit}} \approx 0.3165$). Below it, no sustained virality.
 
     \vspace{0.4em}
     \item \textbf{Feedback loop.} Above threshold, a self-reinforcing cycle:
@@ -271,11 +271,14 @@ Lifecycles on Social Media with Toxicity Feedback}
     Higgs decay-anchored & $0.061$ & $0.041$ & $0.10$ & $0.104$ \\
     External scale & $0.146$ & $0.100$ & $0.31$ & $0.102$ \\
     Reference-constrained & $0.417$ & $0.286$ & $0.41$ & $0.102$ \\
-    Higgs unconstrained & $0.960$ & $1.000$ & $0.74$ & $0.067$ \\
+    Higgs (boundary-constrained)$^\dagger$ & $0.960$ & $1.000$ & $0.74$ & $0.067$ \\
     \bottomrule
   \end{tabular}
 
-  \vspace{0.6em}
+  \vspace{0.4em}
+  \scriptsize $^\dagger$Optimizer reached upper bound $\psi = 1.0$; true unconstrained optimum may have $\psi > 1$.
+
+  \vspace{0.3em}
   \small
   The qualitative policy ranking (engagement-first $>$ moderate $>$ health-first for pressure) is preserved across \textbf{all five} configurations.
 \end{frame}

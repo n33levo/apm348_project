@@ -379,7 +379,11 @@ U_{\mathrm{DFE}} = \frac{\nu}{\lambda_u}, \qquad
 I_{\mathrm{DFE}} = \frac{\rho\, U_{\mathrm{DFE}}}{(1 + U_{\mathrm{DFE}})(\delta + \mu_c)}.
 \label{eq:dfe}
 \end{equation}
-With the current parameter values, $U_{\mathrm{DFE}} = 50.0$ and $I_{\mathrm{DFE}} \approx 0.9804$.
+At the DFE, the suppressed-content compartment satisfies $\dot{S} = \delta I - \mu_c S = 0$, giving
+\[
+S_{\mathrm{DFE}} = \frac{\delta\, I_{\mathrm{DFE}}}{\mu_c}.
+\]
+With the current parameter values, $U_{\mathrm{DFE}} = 50.0$, $I_{\mathrm{DFE}} \approx 0.9804$, and $S_{\mathrm{DFE}} = 0.05 \times 0.9804 / 0.01 \approx 4.902$.
 
 Linearizing the $\dot{V}$ equation around the DFE yields
 \[
@@ -474,7 +478,7 @@ At the DFE, $V = \tau = 0$, and the Jacobian of the full system has a block-tria
 When $\mathcal{R}_0 < 1$, this eigenvalue is negative, and the remaining eigenvalues from the $(I, S, U)$ block are also negative (they correspond to natural decay and user turnover). When $\mathcal{R}_0 > 1$, the $V$ eigenvalue is positive and the DFE is unstable.
 \end{proof}
 
-The transition at $\mathcal{R}_0 = 1$ is a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This bifurcation structure is the standard one for epidemic-type compartmental models and is classified as a transcritical bifurcation in the terminology of the course.
+The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This bifurcation structure is the standard one for epidemic-type compartmental models; a formal center-manifold coefficient calculation confirming the forward direction remains as future work.
 
 Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots $\mathcal{R}_0$ as a function of $\alpha$, with the threshold at $\mathcal{R}_0 = 1$ clearly marked. Panel~(b) shows the equilibrium viral volume $V^*$ computed by integrating the full ODE to steady state for each value of~$\alpha$. The sharp onset at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the subsequent growth of $V^*$ illustrate the transcritical bifurcation.
 
@@ -536,6 +540,7 @@ Parameter & $S(V^*, p)$ & $S(\tau^*, p)$ & $S(U^*, p)$ \\
 $\alpha$ & $+1.67$ & $+1.67$ & $-0.469$ \\
 $\beta_0$ & $+1.67$ & $+1.67$ & $-0.469$ \\
 $\gamma_0$ & $-2.59$ & $-2.59$ & $+0.726$ \\
+$\eta$ & $-0.03$ & $-0.03$ & $+0.008$ \\
 $\kappa$ & $+0.05$ & $+0.05$ & $-0.014$ \\
 $\phi$ & $\approx 0$ & $+1.00$ & $-0.281$ \\
 $\psi$ & $\approx 0$ & $-1.00$ & $+0.281$ \\
@@ -599,7 +604,7 @@ We calibrate the spread block using a reduced three-compartment IVF helper model
 \[
 \lambda(t) = \lambda_0\, e^{-d_\lambda t}.
 \]
-This seed term accounts for the external injection of content into the Higgs cascade (e.g., from news coverage) and improves the fit of the decay tail. The helper model has five free parameters: $\beta_0$, $\gamma_0$, $\lambda_0$, $d_\lambda$, and the initial viral volume $V_0$.
+This seed term accounts for the external injection of content into the Higgs cascade (e.g., from news coverage) and improves the fit of the decay tail. The helper also sets $\delta = 0$ (no moderation attrition); the full model's DFE and equilibrium calculations restore the correct $(\delta + \mu_c)$ attrition. The helper model has five free parameters: $\beta_0$, $\gamma_0$, $\lambda_0$, $d_\lambda$, and the initial viral volume $V_0$.
 
 The optimization uses a bounded Powell search with warm starts, minimizing a weighted sum of squared errors that emphasizes the spike region. The fitted parameter values are:
 \begin{align*}
@@ -630,7 +635,7 @@ The full-window $R^2 = 0.92$ indicates that the reduced IVF helper model explain
 
 We assess parameter uncertainty using two complementary methods.
 
-\paragraph{Parametric bootstrap.} We generate $B = 500$ bootstrap replicates by resampling the Higgs retweet counts from a Poisson distribution with mean equal to the observed count at each time point. Each replicate is refitted, producing a distribution of parameter estimates. The resulting 95\% confidence intervals are:
+\paragraph{Parametric bootstrap.} We generate $B = 500$ bootstrap replicates by resampling the Higgs retweet counts from a Poisson distribution with mean equal to the model-fitted count at each time point (parametric bootstrap). Each replicate is refitted, producing a distribution of parameter estimates. The resulting 95\% confidence intervals are:
 \begin{align*}
 \beta_0 &\in [0.9982,\; 1.0019], \\
 \gamma_0 &\in [0.2964,\; 0.3040], \\
@@ -712,12 +717,13 @@ Current baseline & $0.0560$ & $0.1000$ & $0.1844$ & $0.0390$ \\
 Higgs decay-anchored & $0.0613$ & $0.0409$ & $0.0952$ & $0.1043$ \\
 External scale & $0.1459$ & $0.1000$ & $0.3091$ & $0.1015$ \\
 Reference-constrained & $0.4174$ & $0.2860$ & $0.4064$ & $0.1015$ \\
-Higgs unconstrained & $0.9596$ & $1.0000$ & $0.7422$ & $0.0668$ \\
+Higgs (boundary-constrained)\footnotemark & $0.9596$ & $1.0000$ & $0.7422$ & $0.0668$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+\footnotetext{The optimizer reached the upper bound $\psi = 1.0$ imposed by \texttt{TAU\_PARAM\_BOUNDS}; the true unconstrained optimum may have $\psi > 1$.}
 
-The reference-constrained configuration achieves better proxy-fit quality ($R^2 \approx 0.41$) than either the baseline ($R^2 \approx 0.18$) or the plain external-scale setting ($R^2 \approx 0.31$), while maintaining the externally anchored pressure scale. The remaining gap between the constrained ($R^2 \approx 0.41$) and unconstrained ($R^2 \approx 0.74$) fits is the substantive identification limit of the one-timescale pressure block. Closing this gap would require either a dataset with both spread data and directly observed toxicity labels, or a multi-timescale $\tau$ model.
+The reference-constrained configuration achieves better proxy-fit quality ($R^2 \approx 0.41$) than either the baseline ($R^2 \approx 0.18$) or the plain external-scale setting ($R^2 \approx 0.31$), while maintaining the externally anchored pressure scale. The remaining gap between the constrained ($R^2 \approx 0.41$) and boundary-constrained ($R^2 \approx 0.74$) fits is the substantive identification limit of the one-timescale pressure block. Closing this gap would require either a dataset with both spread data and directly observed toxicity labels, or a multi-timescale $\tau$ model.
 
 
 % ============================================================
@@ -758,7 +764,7 @@ The results show a clear pattern:
 
     \item \textbf{Higher amplification increases viral volume and pressure.} Moving from moderate to engagement-first increases $V^*$ by 73\% (from $0.070$ to $0.120$) and $\tau^*$ by 73\% (from $0.039$ to $0.067$). The proportional increase is the same because $\tau^* = \phi V^*/\psi$ is linear in $V^*$ at equilibrium.
 
-    \item \textbf{Higher amplification reduces user retention.} The engagement-first scenario retains only $29.9$ users compared to $36.0$ in the moderate scenario and $50.0$ in the health-first scenario. This is a 40\% reduction relative to the maximum.
+    \item \textbf{Higher amplification reduces user retention.} The engagement-first scenario retains only $29.9$ users compared to $36.0$ in the moderate scenario and $50.0$ in the health-first scenario. This is a 40\% reduction relative to the health-first baseline ($U^* = 50$).
 
     \item \textbf{The tradeoff is real but nonlinear.} The engagement-first scenario does produce more short-run viral content, but the long-run user base is substantially smaller. Whether this tradeoff is favourable depends on what the platform optimizes.
 \end{enumerate}
@@ -876,13 +882,13 @@ We have developed and analyzed a deterministic compartmental ODE model for conte
 \begin{enumerate}[leftmargin=1.5em]
     \item \textbf{Well-posedness.} The model preserves nonnegativity and admits a bounded invariant region (Propositions~\ref{prop:nonneg} and \ref{prop:bounded}).
 
-    \item \textbf{Clear amplification threshold.} Viral content is self-sustaining if and only if $\mathcal{R}_0 > 1$, which occurs at $\alpha > \alpha_{\mathrm{crit}} \approx 0.3165$ under the current calibration. The transition is a transcritical bifurcation.
+    \item \textbf{Clear amplification threshold.} Viral content is self-sustaining if and only if $\mathcal{R}_0 > 1$, which occurs at $\alpha > \alpha_{\mathrm{crit}} \approx 0.3165$ under the current calibration. The transition is consistent with a transcritical bifurcation.
 
-    \item \textbf{Strong spread calibration.} The reduced IVF helper model fits the Higgs retweet data with $R^2 = 0.92$, and the spread parameters are tightly identified (bootstrap CI width $< 0.01$). The IVF model outperforms a classical SIR benchmark ($R^2 = 0.89$ vs.\ $0.69$).
+    \item \textbf{Strong spread calibration.} The reduced IVF helper model fits the Higgs retweet data with full-window $R^2 = 0.92$, and the spread parameters are tightly identified (bootstrap CI width $< 0.01$). The IVF model outperforms a classical SIR benchmark on the spike window (spike-window $R^2 = 0.89$ vs.\ $0.69$).
 
     \item \textbf{Robust policy ranking.} Across all tested pressure configurations, the qualitative ordering is preserved: higher amplification increases viral volume and discussion pressure while lowering user retention.
 
-    \item \textbf{Honest pressure identification.} The pressure block is partially identified through a combination of same-dataset reply proxy and external toxicity reference. The reference-constrained calibration provides the best available estimate ($R^2 \approx 0.41$), but a gap remains relative to the unconstrained optimum ($R^2 \approx 0.74$).
+    \item \textbf{Honest pressure identification.} The pressure block is partially identified through a combination of same-dataset reply proxy and external toxicity reference. The reference-constrained calibration provides the best available estimate ($R^2 \approx 0.41$), but a gap remains relative to the boundary-constrained optimum ($R^2 \approx 0.74$, where the optimizer reached the upper bound on $\psi$).
 \end{enumerate}
 
 \subsection{Significance}

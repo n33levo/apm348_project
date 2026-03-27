@@ -102,22 +102,24 @@ def run_continuation(beta0: float,
 
 
 def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
-    """bump each param +/-50% and see how tau* and U* move"""
+    """bump each param +/-1% and compute local sensitivity indices"""
     a_loss = DELTA + MU_C
     u_dfe = NU / LAMBDA_U
     i_dfe = RHO * u_dfe / ((1.0 + u_dfe) * a_loss)
     y0 = [i_dfe, 0.01, 0.0, 0.0, 0.0, u_dfe]
     t_grid = np.linspace(0, 2000, 10001)
 
-    def get_eq(ode_func):
-        sol = odeint(ode_func, y0, t_grid, args=(alpha, beta0, gamma0), mxstep=20000)
-        return float(sol[-1, 4]), float(sol[-1, 5])
+    def get_eq(ode_func, alpha_ov=alpha, beta0_ov=beta0, gamma0_ov=gamma0):
+        sol = odeint(ode_func, y0, t_grid, args=(alpha_ov, beta0_ov, gamma0_ov), mxstep=20000)
+        return float(sol[-1, 1]), float(sol[-1, 4]), float(sol[-1, 5])
 
-    tau_base, u_base = get_eq(full_ivfs_ode)
-    params_to_vary = {'kappa': KAPPA, 'eta': ETA, 'phi': PHI, 'psi': PSI, 'w': W}
+    v_base, tau_base, u_base = get_eq(full_ivfs_ode)
+
+    # --- parameters passed inside the ODE (kappa, eta, phi, psi, w) ---
+    internal_params = {'kappa': KAPPA, 'eta': ETA, 'phi': PHI, 'psi': PSI, 'w': W}
     rows = []
-    for name, base_val in params_to_vary.items():
-        for factor, label in [(0.5, '-50%'), (1.5, '+50%')]:
+    for name, base_val in internal_params.items():
+        for factor, label in [(0.99, '-1%'), (1.01, '+1%')]:
             ov = {name: base_val * factor}
 
             def ode_mod(y, t, a, b, g, _ov=ov):
@@ -127,14 +129,35 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
                                  RHO, LAMBDA_U, NU, MU_C, DELTA,
                                  _ov.get('w', W))
 
-            tau_mod, u_mod = get_eq(ode_mod)
+            v_mod, tau_mod, u_mod = get_eq(ode_mod)
+            dv = v_mod - v_base
             dtau = tau_mod - tau_base
             du = u_mod - u_base
             frac_change = factor - 1.0
+            v_si = (dv / v_base) / frac_change if v_base > 1e-12 else 0.0
             tau_si = (dtau / tau_base) / frac_change if tau_base > 1e-12 else 0.0
             u_si = (du / u_base) / frac_change if abs(u_base) > 1e-12 else 0.0
-            rows.append((name, label, base_val * factor, dtau, du, tau_si, u_si))
-    return tau_base, u_base, rows
+            rows.append((name, label, base_val * factor, dv, dtau, du, v_si, tau_si, u_si))
+
+    # --- parameters passed as ODE args (alpha, beta0, gamma0) ---
+    arg_params = {'alpha': alpha, 'beta0': beta0, 'gamma0': gamma0}
+    for name, base_val in arg_params.items():
+        for factor, label in [(0.99, '-1%'), (1.01, '+1%')]:
+            new_val = base_val * factor
+            a_ov = new_val if name == 'alpha' else alpha
+            b_ov = new_val if name == 'beta0' else beta0
+            g_ov = new_val if name == 'gamma0' else gamma0
+            v_mod, tau_mod, u_mod = get_eq(full_ivfs_ode, alpha_ov=a_ov, beta0_ov=b_ov, gamma0_ov=g_ov)
+            dv = v_mod - v_base
+            dtau = tau_mod - tau_base
+            du = u_mod - u_base
+            frac_change = factor - 1.0
+            v_si = (dv / v_base) / frac_change if v_base > 1e-12 else 0.0
+            tau_si = (dtau / tau_base) / frac_change if tau_base > 1e-12 else 0.0
+            u_si = (du / u_base) / frac_change if abs(u_base) > 1e-12 else 0.0
+            rows.append((name, label, new_val, dv, dtau, du, v_si, tau_si, u_si))
+
+    return v_base, tau_base, u_base, rows
 
 
 def build_tau_configurations(beta0: float,
