@@ -360,8 +360,8 @@ Viral content drives pressure, pressure amplifies the effective spread rate, and
 \draw[feedback] (tau.north west) -- node[lbl, above left=-2pt, pos=0.6] {\scriptsize$\kappa\tau$} ($(I)!0.5!(V)+(0,-0.45)$);
 % Feedback: tau modulates fatigue rate
 \draw[feedback] (tau.north east) -- node[lbl, above right=-2pt, pos=0.6] {\scriptsize$\eta\tau$} ($(V)!0.5!(F)+(0,-0.45)$);
-% Feedback: tau drives user attrition (routed below S)
-\draw[feedback] (tau.south) -- ++(0,-0.5) -| node[lbl, below, pos=0.25] {\scriptsize$w\tau \!\to\! \lambda_u$} (U.south);
+% Feedback: tau drives user attrition (routed below)
+\draw[feedback] (tau.south) -- ++(0,-0.7) -| node[lbl, below, pos=0.35] {\scriptsize$w\tau \!\to\! \lambda_u$} (S.south) -| (U.south);
 
 \end{tikzpicture}
 \caption{State-flow structure of the IVFS model. Solid arrows show content transitions and forcing terms; dashed red arrows show the toxicity feedback loop. Content moves through I$\to$V$\to$F with moderation diverting I$\to$S. Viral content drives latent pressure~$\tau$, which feeds back into both spread and fatigue rates and accelerates user attrition.}
@@ -475,7 +475,15 @@ At the DFE, $V = \tau = 0$, and the Jacobian of the full system has a block-tria
 \[
 \mu_V = \alpha\,\beta_0\,I_{\mathrm{DFE}} - \gamma_0 - \mu_c = (\gamma_0 + \mu_c)(\mathcal{R}_0 - 1).
 \]
-When $\mathcal{R}_0 < 1$, this eigenvalue is negative, and the remaining eigenvalues from the $(I, S, U)$ block are also negative (they correspond to natural decay and user turnover). When $\mathcal{R}_0 > 1$, the $V$ eigenvalue is positive and the DFE is unstable.
+When $\mathcal{R}_0 < 1$, this eigenvalue is negative. The remaining five eigenvalues of the block-triangular Jacobian at the DFE are:
+\[
+\mu_\tau = -\psi, \quad
+\mu_F = -\mu_c, \quad
+\mu_I = -(\delta + \mu_c), \quad
+\mu_S = -\mu_c, \quad
+\mu_U = -\lambda_u,
+\]
+all of which are strictly negative since every parameter is positive. Hence the DFE is locally asymptotically stable. When $\mathcal{R}_0 > 1$, the $V$ eigenvalue is positive and the DFE is unstable.
 \end{proof}
 
 The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This bifurcation structure is the standard one for epidemic-type compartmental models; a formal center-manifold coefficient calculation confirming the forward direction remains as future work.
@@ -548,6 +556,8 @@ $w$ & $-0.02$ & $-0.02$ & $-0.275$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Several indices have magnitude greater than one (``super-elastic''). This is expected above the transcritical bifurcation: the nonlinear mass-action feedback loop amplifies small parameter perturbations, so that a $1\%$ change in a parameter can produce more than a $1\%$ change in the equilibrium quantity.
 
 The key findings from the sensitivity analysis are:
 \begin{enumerate}[leftmargin=1.5em]
@@ -627,7 +637,7 @@ The full-window $R^2 = 0.92$ indicates that the reduced IVF helper model explain
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_calibration_diagnostics.png}
-\caption{Calibration diagnostics for the Higgs retweet fit. The panels show the fitted retweet curve against the observed data, tail behaviour, and proxy family comparisons.}
+\caption{Calibration diagnostics for the Higgs retweet fit. The panels show (a)~the spike-region fit, (b)~the full-window fit with tail behaviour, (c)~the selected pressure proxy with proxy family comparisons, and (d)~residuals.}
 \label{fig:cal}
 \end{figure}
 
@@ -721,7 +731,7 @@ Higgs (boundary-constrained)\footnotemark & $0.9596$ & $1.0000$ & $0.7422$ & $0.
 \bottomrule
 \end{tabular}
 \end{table}
-\footnotetext{The optimizer reached the upper bound $\psi = 1.0$ imposed by \texttt{TAU\_PARAM\_BOUNDS}; the true unconstrained optimum may have $\psi > 1$.}
+\footnotetext{The optimizer reached the upper bound $\psi = 1.0$ imposed during optimization; the true unconstrained optimum may have $\psi > 1$.}
 
 The reference-constrained configuration achieves better proxy-fit quality ($R^2 \approx 0.41$) than either the baseline ($R^2 \approx 0.18$) or the plain external-scale setting ($R^2 \approx 0.31$), while maintaining the externally anchored pressure scale. The remaining gap between the constrained ($R^2 \approx 0.41$) and boundary-constrained ($R^2 \approx 0.74$) fits is the substantive identification limit of the one-timescale pressure block. Closing this gap would require either a dataset with both spread data and directly observed toxicity labels, or a multi-timescale $\tau$ model.
 
@@ -804,7 +814,7 @@ This robustness check is important because the pressure parameters are only part
 \subsection{Multi-window validation}
 \label{sec:windowval}
 
-Because the Higgs record spans only 168 hours, independent 100-hour windows are not available. To assess whether the spread model generalizes beyond the main calibration window, we refit the reduced IVF helper model on three representative 48-hour active windows from the same record.
+Because the Higgs record spans only 168 hours, independent 100-hour windows are not available. To assess whether the spread model generalizes beyond the main calibration window, we refit the reduced IVF helper model on three representative 48-hour active windows from the same record. Note that these windows overlap substantially (e.g., windows~2 and~3 share hours 120--151, a 32-hour overlap), so the refits are not independent; the purpose is to test whether the model shape fits different phases of the cascade, not to provide independent replication.
 
 \begin{table}[H]
 \centering
@@ -840,7 +850,7 @@ The local $R^2$ values range from $0.69$ to $0.95$, which shows that the burst-a
 We identify the following limitations of the present model and analysis. We organize them by severity, starting with the most consequential.
 
 \begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Partial identification of the pressure block.} The pressure parameters $(\phi, \psi)$ are not uniquely determined by the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially but not completely. Moreover, the boundary-constrained fit (Table~\ref{tab:pressure_configs}) reaches the upper bound $\psi = 1.0$ imposed by \texttt{TAU\_PARAM\_BOUNDS}; the true unconstrained optimum may lie at $\psi > 1$, and relaxing this bound is a natural next step once independent pressure data become available.
+    \item \textbf{Partial identification of the pressure block.} The pressure parameters $(\phi, \psi)$ are not uniquely determined by the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially but not completely. Moreover, the boundary-constrained fit (Table~\ref{tab:tauconfigs}) reaches the upper bound $\psi = 1.0$ imposed during optimization; the true unconstrained optimum may lie at $\psi > 1$, and relaxing this bound is a natural next step once independent pressure data become available.
 
     \item \textbf{Single-event spread calibration.} The spread model is fitted to one main event window from the Higgs dataset. While the multi-window validation (Table~\ref{tab:windowval}) shows that the model shape is robust, the parameter values are specific to this particular cascade. Calibration on additional independent events would strengthen the empirical foundation.
 
