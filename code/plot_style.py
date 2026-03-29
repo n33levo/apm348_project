@@ -4,14 +4,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 FONT_FAMILY = 'DejaVu Sans'
-BASE_FONT_SIZE = 11
-TITLE_FONT_SIZE = 13
-SUPTITLE_FONT_SIZE = 14
-LEGEND_FONT_SIZE = 10
-LINE_WIDTH = 2.3
+BASE_FONT_SIZE = 12
+TITLE_FONT_SIZE = 15
+SUPTITLE_FONT_SIZE = 17
+LEGEND_FONT_SIZE = 11
+LINE_WIDTH = 2.5
 GRID_ALPHA = 0.22
-OBSERVED_MARKER_SIZE = 24
-SMALL_MARKER_SIZE = 16
+OBSERVED_MARKER_SIZE = 30
+SMALL_MARKER_SIZE = 18
 
 OBSERVED_COLOR = '#4B5563'
 SMOOTH_COLOR = '#1F2937'
@@ -39,6 +39,8 @@ def apply_plot_style() -> None:
         'axes.titlesize': TITLE_FONT_SIZE,
         'axes.titleweight': 'semibold',
         'axes.labelsize': BASE_FONT_SIZE,
+        'xtick.labelsize': BASE_FONT_SIZE,
+        'ytick.labelsize': BASE_FONT_SIZE,
         'axes.grid': True,
         'grid.alpha': GRID_ALPHA,
         'grid.linestyle': '-',
@@ -71,14 +73,65 @@ def add_threshold_shading(ax, threshold: float, label: str = 'Subcritical') -> N
         ax.text(x_text, 0.92 * y_top, label, ha='center', va='top', color='#475467', fontsize=10)
 
 
-def add_metric_box(ax, lines: list[str], x: float = 0.03, y: float = 0.97) -> None:
+def add_top_padding(ax, fraction: float = 0.16, keep_bottom: float | None = None) -> None:
+    ymin, ymax = ax.get_ylim()
+    if keep_bottom is not None:
+        ymin = keep_bottom
+    span = ymax - ymin
+    if span <= 0:
+        span = max(abs(ymax), 1.0)
+    ax.set_ylim(ymin, ymax + fraction * span)
+
+
+def add_symmetric_padding(ax, fraction: float = 0.12) -> None:
+    ymin, ymax = ax.get_ylim()
+    span = ymax - ymin
+    if span <= 0:
+        span = max(abs(ymax), 1.0)
+    pad = fraction * span
+    ax.set_ylim(ymin - pad, ymax + pad)
+
+
+def add_shared_legend(fig, handles, labels,
+                      loc: str = 'upper center',
+                      bbox_to_anchor: tuple[float, float] = (0.5, 0.99),
+                      ncol: int | None = None,
+                      fontsize: float | None = None):
+    unique_handles = []
+    unique_labels = []
+    seen: set[str] = set()
+    for handle, label in zip(handles, labels):
+        if not label or label.startswith('_') or label in seen:
+            continue
+        seen.add(label)
+        unique_handles.append(handle)
+        unique_labels.append(label)
+    if not unique_handles:
+        return None
+    if ncol is None:
+        ncol = min(4, len(unique_handles))
+    return fig.legend(
+        unique_handles,
+        unique_labels,
+        loc=loc,
+        bbox_to_anchor=bbox_to_anchor,
+        ncol=max(1, ncol),
+        fontsize=LEGEND_FONT_SIZE if fontsize is None else fontsize,
+        frameon=True,
+        framealpha=0.95,
+        edgecolor='#D0D5DD',
+    )
+
+
+def add_metric_box(ax, lines: list[str], x: float = 0.03, y: float = 0.97,
+                   va: str = 'top', fontsize: float = 9) -> None:
     ax.text(
         x,
         y,
         '\n'.join(lines),
         transform=ax.transAxes,
         ha='left',
-        va='top',
-        fontsize=9,
+        va=va,
+        fontsize=fontsize,
         bbox={'boxstyle': 'round,pad=0.35', 'facecolor': 'white', 'edgecolor': '#D0D5DD', 'alpha': 0.95},
     )

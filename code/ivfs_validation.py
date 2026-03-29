@@ -6,11 +6,11 @@ import argparse
 
 import numpy as np
 
-from .common import add_dataset_cli_arguments, build_run_metadata, write_json
+from .common import add_dataset_cli_arguments
 from .ivfs_calibration import (FIT_WINDOW_HOURS, bootstrap_calibration, bootstrap_curve_band,
                                build_hourly_curve, ensure_dataset, fit_basic_ivf,
                                parse_activity_file, profile_likelihood)
-from .ivfs_config import (DELTA, DIAG_FIGURE_PATH, FIGURE_PATH, LAMBDA_U, METADATA_PATH, MU_C,
+from .ivfs_config import (DELTA, DIAG_FIGURE_PATH, FIGURE_PATH, LAMBDA_U, MU_C,
                           NU, PHI, PHI_SENS_FIGURE_PATH, PROFILE_FIGURE_PATH, PSI, RHO,
                           ROBUST_BIN_HOURS, ROBUST_WINDOW_HOURS, SPIKE_WINDOW_HOURS,
                           TAIL_START_HOURS, TAU_COMPARE_FIGURE_PATH)
@@ -21,11 +21,10 @@ from .ivfs_figures import (make_calibration_figure, make_phi_sensitivity_figure,
 
 
 def main(dataset_path: str | None = None,
-         allow_download: bool = False,
-         offline: bool = False) -> None:
+        ) -> None:
     print('Running calibration + scenarios + figures')
 
-    resolved_dataset = ensure_dataset(dataset_path=dataset_path, allow_download=allow_download, offline=offline)
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
     rt_timestamps, re_timestamps, mt_timestamps, total_rows = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps, re_timestamps, mt_timestamps)
     window_counts = cal['rt_window']
@@ -76,7 +75,7 @@ def main(dataset_path: str | None = None,
     external_tau_ref = None
     external_source = None
     try:
-        from toxicity_calibration import get_external_tau_reference
+        from .toxicity_calibration import get_external_tau_reference
         ext_ref = get_external_tau_reference()
         if ext_ref is not None:
             external_tau_ref = float(ext_ref['tau_reference'])
@@ -292,73 +291,22 @@ def main(dataset_path: str | None = None,
             robust_sse = float(np.sum((robust_fit[:robust_fit_hours] - robust_norm[:robust_fit_hours]) ** 2))
             robust_ss_tot = float(np.sum((robust_norm[:robust_fit_hours] - np.mean(robust_norm[:robust_fit_hours])) ** 2))
             robust_r2 = 1.0 - robust_sse / robust_ss_tot if robust_ss_tot > 0 else 0.0
-            row = {
+            robustness_rows.append({
                 'window_hours': int(window_hours),
                 'bin_hours': int(bin_hours),
                 'beta0': float(robust_beta),
                 'gamma0': float(robust_gamma),
                 'loss': float(robust_loss),
                 'r2': float(robust_r2),
-            }
-            robustness_rows.append(row)
+            })
             print(
                 f"  window={window_hours:>3}h, bin={bin_hours}h: "
                 f"beta0={robust_beta:.4f}, gamma0={robust_gamma:.4f}, R2={robust_r2:.4f}"
             )
-
-    outputs = {
-        'figures': {
-            'calibration': str(DIAG_FIGURE_PATH),
-            'policy': str(FIGURE_PATH),
-            'phi_sensitivity': str(PHI_SENS_FIGURE_PATH),
-            'profile': str(PROFILE_FIGURE_PATH),
-            'tau_comparison': str(TAU_COMPARE_FIGURE_PATH) if tau_configs else None,
-        },
-        'fit': {
-            'beta0': float(beta0),
-            'gamma0': float(gamma0),
-            'lambda0': float(lambda0),
-            'lambda_decay': float(lambda_decay),
-            'v0': float(v0_fit),
-            'weighted_loss': float(weighted_loss),
-            'r2_fit_window': float(r2_fit),
-            'r2_spike_window': float(r2_spike),
-            'r2_full_window': float(r2_full),
-            'tail_mean_bias': float(tail_bias),
-            'alpha_r0': float(alpha_r0),
-        },
-        'fit_band': {
-            'lower_first10': [float(x) for x in fit_band_low[:10]],
-            'upper_first10': [float(x) for x in fit_band_high[:10]],
-        },
-        'bootstrap_ci': {key: [float(val[0]), float(val[1])] for key, val in ci.items()},
-        'robustness_checks': robustness_rows,
-        'tau_proxy_configs': list(tau_configs.keys()),
-        'external_tau_source': external_source,
-    }
-    write_json(
-        METADATA_PATH,
-        build_run_metadata(
-            script_name='ivfs_validation',
-            dataset_path=resolved_dataset,
-            parameters={
-                'phi': float(PHI),
-                'psi': float(PSI),
-                'fit_window_hours': int(fit_window_hours),
-                'bootstrap_replicates': 500,
-            },
-            solver={},
-            outputs=outputs,
-            notes={
-                'tau_definition': 'Toxicity is the latent rage-bait toxicity state tau, not a direct text label.',
-                'nonnegativity_guard': 'State variables are clamped to zero in the RHS near the boundary as a numerical safeguard.',
-            },
-        ),
-    )
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the full IVFS calibration, robustness, and figure pipeline.')
     add_dataset_cli_arguments(parser)
     args = parser.parse_args()
-    main(dataset_path=args.dataset_path, allow_download=args.allow_download, offline=args.offline)
+    main(dataset_path=args.dataset_path)

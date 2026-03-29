@@ -17,13 +17,13 @@ The code can be run either as plain scripts or as package modules. The package f
 Run these from the repository root:
 
 ```bash
-python -m code.ivfs_validation --offline
-python -m code.equilibrium_analysis --offline
-python -m code.benchmark_models --offline
+python -m code.ivfs_validation
+python -m code.equilibrium_analysis
+python -m code.benchmark_models
 python -m code.toxicity_calibration
 ```
 
-If the Higgs file is not in the default data directory, pass `--dataset-path /path/to/higgs-activity_time.txt`. Download is disabled by default. Use `--allow-download` only if you explicitly want the code to fetch the public SNAP file.
+If the Higgs file is not in the default data directory, pass `--dataset-path /path/to/higgs-activity_time.txt`. The code only reads local files and does not download datasets.
 
 ## What each script does
 

@@ -6,9 +6,8 @@ import numpy as np
 from numpy.linalg import eigvals
 from scipy.optimize import root_scalar
 
-from .common import build_run_metadata, write_json
 from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
-from .ivfs_config import DELTA, EQUILIBRIUM_METADATA_PATH, ETA, FIT_WINDOW_HOURS, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, W
+from .ivfs_config import DELTA, ETA, FIT_WINDOW_HOURS, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, W
 
 A_LOSS = DELTA + MU_C
 
@@ -88,8 +87,8 @@ def jacobian(state: np.ndarray, alpha: float, beta0: float, gamma0: float) -> np
     return jac
 
 
-def main(dataset_path=None, allow_download: bool = False, offline: bool = False) -> None:
-    resolved_dataset = ensure_dataset(dataset_path=dataset_path, allow_download=allow_download, offline=offline)
+def main(dataset_path=None) -> None:
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
     rt_timestamps, *_ = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps)
     window_counts = cal['rt_window']
@@ -133,24 +132,11 @@ def main(dataset_path=None, allow_download: bool = False, offline: bool = False)
             })
         print()
 
-    write_json(
-        EQUILIBRIUM_METADATA_PATH,
-        build_run_metadata(
-            script_name='equilibrium_analysis',
-            dataset_path=resolved_dataset,
-            parameters={'beta0': beta0, 'gamma0': gamma0, 'alphas': [0.2, 0.5, 0.9]},
-            solver={},
-            outputs={'rows': summary_rows},
-        ),
-    )
-
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Run equilibrium and stability checks for the IVFS model.')
     parser.add_argument('--dataset-path', type=str, default=None)
-    parser.add_argument('--allow-download', action='store_true')
-    parser.add_argument('--offline', action='store_true')
     args = parser.parse_args()
-    main(dataset_path=args.dataset_path, allow_download=args.allow_download, offline=args.offline)
+    main(dataset_path=args.dataset_path)

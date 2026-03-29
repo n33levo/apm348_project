@@ -422,7 +422,7 @@ This $\mathcal{R}_0$ comes from linearizing the $\dot{V}$ equation at the DFE. A
 
 The mechanism the model proposes is a nonlinear amplification-pressure feedback loop: platform amplification $\alpha$ converts ignored content to viral, viral content builds latent discussion pressure, and that pressure boosts further spread while eroding the user base. Whether this feedback self-sustains depends entirely on whether $\alpha$ exceeds $\alpha_{\mathrm{crit}}$.
 
-In the numerical implementation, trajectories are integrated with SciPy's adaptive `solve\_ivp` solver using explicit tolerances and a one-hour maximum step. The code also clamps small negative state excursions back to zero inside the right-hand side evaluation. This does not change the analytical model; it is a numerical safeguard that keeps the computed trajectory inside the nonnegative region established above.
+In the numerical implementation, the full IVFS trajectories and policy sweeps are integrated with SciPy's adaptive `solve\_ivp` solver using explicit tolerances and a one-hour maximum step. The reduced three-state Higgs helper fit is kept on the older `odeint` routine so that the calibration reproduces the reported spread estimates exactly. The code also clamps small negative state excursions back to zero inside the right-hand side evaluation for the full six-state system. This does not change the analytical model; it is a numerical safeguard that keeps the computed trajectory inside the nonnegative region established above.
 
 % ============================================================
 %  6. ANALYSIS OF THE MODEL
@@ -504,7 +504,7 @@ all of which are strictly negative since every parameter is positive. Hence the 
 
 The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical bifurcation}: the DFE exchanges stability with a positive equilibrium as $\alpha$ passes through $\alpha_{\mathrm{crit}}$. Below the threshold, only the DFE exists (among nonnegative equilibria). Above the threshold, a unique positive equilibrium with $V^* > 0$ bifurcates from the DFE and is locally stable. This is the standard bifurcation structure for epidemic-type compartmental models; a formal center-manifold coefficient calculation confirming the forward direction remains as future work.
 
-Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots $\mathcal{R}_0$ as a function of $\alpha$, with the threshold at $\mathcal{R}_0 = 1$ clearly marked. Panel~(b) shows the equilibrium viral volume $V^*$ computed by integrating the full ODE to steady state for each value of~$\alpha$. The sharp onset at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the subsequent growth of $V^*$ illustrate the transcritical bifurcation.
+Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots $\mathcal{R}_0$ as a function of $\alpha$, with the threshold at $\mathcal{R}_0 = 1$ clearly marked. Panel~(b) shows the equilibrium viral volume $V^*$ obtained from the positive-equilibrium calculation for each value of~$\alpha$. The sharp onset at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the subsequent growth of $V^*$ illustrate the transcritical bifurcation.
 
 \begin{figure}[H]
 \centering
@@ -756,7 +756,7 @@ The reference-constrained configuration achieves better proxy-fit quality ($R^2 
 
 The empirical picture the calibration establishes is: the spread side is tightly identified (bootstrap 95\% CI on $\alpha_{\mathrm{crit}}$ spans $[0.313,\,0.320]$), but the toxicity block is constrained only along the ratio $\phi/\psi \approx 1.46$. The individual values of $\phi$ and $\psi$ require an independent text toxicity measurement, or an independent same platform toxicity measurement, to pin down separately.
 
-We also checked whether the spread-side conclusions are sensitive to the exact calibration window and time discretization. Re-fitting the reduced IVF model on 80, 100, and 120 hour windows with the original 1 hour discretization leaves the main qualitative conclusions intact: the dominant spike is still well fit and the inferred spread parameters remain in the same general range. A harsher stress test with 2 hour binning performs much worse, which is informative rather than alarming. The model was formulated and calibrated at the 1 hour event scale, so coarse aggregation compresses the spike shape and weakens fit quality. This matters because it shows the main spread conclusion is robust to nearby window choices at the native time scale, while also clarifying the temporal resolution at which the calibration should be interpreted.
+We also checked whether the spread-side conclusions are sensitive to the exact calibration window and time discretization. Re-fitting the reduced IVF model on 80 and 100 hour windows with the original 1 hour discretization still gives strong fits ($R^2 \approx 0.91$ and $0.92$), while the 120 hour window is noticeably weaker because it pulls in a much longer low-volume tail. A harsher stress test with 2 hour binning performs much worse again. The model was formulated and calibrated at the 1 hour event scale around the dominant spike, so both long-tail expansion and coarse aggregation weaken fit quality. This matters because it shows the main spread conclusion is robust near the calibrated spike window, while also clarifying where that calibration stops being reliable.
 
 % ============================================================
 %  8. NUMERICAL RESULTS
@@ -783,7 +783,7 @@ Table~\ref{tab:scenarios} reports the long-run equilibrium values under each sce
 \toprule
 Scenario & $\mathcal{R}_0$ & $V^*$ & $\tau^*$ & $U^*$ & Regime \\
 \midrule
-Engagement-first ($\alpha = 0.9$) & $2.84$ & $0.1203$ & $0.0674$ & $29.88$ & Supercritical \\
+Engagement-first ($\alpha = 0.9$) & $2.84$ & $0.1203$ & $0.0673$ & $29.88$ & Supercritical \\
 Moderate ($\alpha = 0.5$) & $1.58$ & $0.0697$ & $0.0390$ & $35.97$ & Supercritical \\
 Health-first ($\alpha = 0.2$) & $0.63$ & $0.0000$ & $0.0000$ & $50.00$ & Subcritical \\
 \bottomrule
@@ -958,12 +958,12 @@ Some directions for future work:
 
 All code used in this project is available in the repository. The main scripts are:
 \begin{verbatim}
-python -m code.ivfs_validation --offline
-python -m code.equilibrium_analysis --offline
-python -m code.benchmark_models --offline
+python -m code.ivfs_validation
+python -m code.equilibrium_analysis
+python -m code.benchmark_models
 python -m code.toxicity_calibration
 \end{verbatim}
-The main outputs (figures, diagnostics, and run metadata) are written to the \texttt{assets/} directory. The Python environment is specified in \texttt{requirements.txt}. The Higgs dataset is expected locally, with optional external toxicity files supplied separately by the user.
+The main outputs (figures, diagnostics, and run metadata) are written to the \texttt{assets/} directory. The Python environment is specified in \texttt{requirements.txt}. The Higgs dataset is expected locally, with optional external toxicity files supplied separately by the user. The code does not download datasets from the internet.
 
 \section{Identification note for the pressure block}
 \label{app:ident}

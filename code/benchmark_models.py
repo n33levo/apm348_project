@@ -5,15 +5,16 @@ from __future__ import annotations
 import numpy as np
 from scipy.optimize import minimize
 
-from .common import ASSETS_DIR, add_dataset_cli_arguments, build_run_metadata, solve_trajectory, write_json
+from .common import ASSETS_DIR, add_dataset_cli_arguments, solve_trajectory
 from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
-from .ivfs_config import (BENCHMARK_METADATA_PATH, FIT_WINDOW_HOURS,
+from .ivfs_config import (FIT_WINDOW_HOURS,
                           SCENARIO_DISPLAY_HOURS, SOLVER_ATOL, SOLVER_MAX_STEP,
                           SOLVER_METHOD, SOLVER_RTOL, SPIKE_WINDOW_HOURS)
 from .ivfs_dynamics import run_scenarios
 from .plot_style import (FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR, OBSERVED_MARKER_SIZE,
                          REFERENCE_COLOR, SCENARIO_COLORS, SMOOTH_COLOR, SUPTITLE_FONT_SIZE,
-                         add_metric_box, apply_plot_style, finish_axes)
+                         add_metric_box, add_shared_legend, add_top_padding, apply_plot_style,
+                         finish_axes)
 
 import matplotlib
 
@@ -22,6 +23,7 @@ import matplotlib.pyplot as plt
 
 
 FIGURE_PATH = ASSETS_DIR / 'benchmark_curve_compare.png'
+BENCHMARK_SCENARIO_XMAX = 100
 
 
 def sir_ode(t, y, beta, gamma):
@@ -112,59 +114,61 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
     apply_plot_style()
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
-    # Panel 1 -- comparing both fits on the primary calibration window
     x = np.arange(len(empirical_norm))
     smooth = np.convolve(empirical_norm, np.ones(3) / 3.0, mode='same')
     corr = float(np.corrcoef(ivf_fit, sir_fit)[0, 1])
-    axs[0].scatter(x, empirical_norm, s=OBSERVED_MARKER_SIZE, alpha=0.55, color=OBSERVED_COLOR, label='Observed hourly retweets')
-    axs[0].plot(x, smooth, linewidth=2.0, color=SMOOTH_COLOR, label='Observed 3h mean')
-    axs[0].plot(x, ivf_fit, linewidth=2.2, color=FIT_COLOR, label=f'IVF fit (weighted SSE={sse_ivf:.3f})')
+    axs[0].scatter(x, empirical_norm, s=14, alpha=0.35, color='#616161', label='Raw hourly RT')
+    axs[0].plot(x, smooth, linewidth=2.0, color='#37474F', label='Empirical 3h mean')
+    axs[0].plot(x, ivf_fit, linewidth=2.2, color='#C62828', label=f'IVF (loss={sse_ivf:.3f}, 5 params)')
     axs[0].plot(x, sir_fit, linewidth=2.2, color='#1565C0', linestyle='--', label=f'SIR (loss={sse_sir:.3f}, 3 params)')
     if fit_window_hours < len(empirical_norm):
-        axs[0].axvline(fit_window_hours, color=REFERENCE_COLOR, linestyle='--', linewidth=1.0, alpha=0.8,
+        axs[0].axvline(fit_window_hours, color='gray', linestyle='--', linewidth=1.0, alpha=0.8,
                        label=f'Fit cutoff (h {fit_window_hours})')
-    axs[0].set_title('(a) Higgs spike fit: IVF versus SIR')
-    finish_axes(axs[0], 'Hours since calibration window start', 'Normalized retweet volume')
-    add_metric_box(
-        axs[0],
-        [
-            f'Curve correlation = {corr:.4f}',
-            f'IVF spike-window R² = {ivf_r2:.4f}',
-            f'SIR spike-window R² = {sir_r2:.4f}',
-        ],
-        x=0.52,
-        y=0.95,
-    )
-    axs[0].legend(loc='lower right', fontsize=LEGEND_FONT_SIZE)
+    axs[0].set_title('(a) Higgs Window Fit: IVF vs SIR')
+    axs[0].set_xlabel('Hour index in 100-hour window')
+    axs[0].set_ylabel('Normalized activity')
+    axs[0].annotate(
+        f'r = {corr:.4f}\n'
+        f'IVF R² (0–{SPIKE_WINDOW_HOURS - 1}h) = {ivf_r2:.4f}\n'
+        f'SIR R² (0–{SPIKE_WINDOW_HOURS - 1}h) = {sir_r2:.4f}',
+        xy=(0.52, 0.77), xycoords='axes fraction',
+        fontsize=9, bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
+    axs[0].legend(fontsize=8)
 
-    # Panel 2 -- discussion pressure, SIR can't capture this
+    colors = {
+        'Engagement-First (alpha=0.9)': '#C62828',
+        'Moderate (alpha=0.5)': '#1565C0',
+        'Health-First (alpha=0.2)': '#2E7D32',
+    }
+
     for label, data in scenario_results.items():
         axs[1].plot(t_scenario, data['solution'][:, 4], linewidth=2.0,
-                    color=SCENARIO_COLORS[label], label=label)
-    axs[1].axhline(0, color=REFERENCE_COLOR, linewidth=0.8, linestyle=':')
-    axs[1].set_title('(b) Toxicity path that SIR cannot represent')
-    finish_axes(axs[1], 'Time since scenario start (hours)', r'Latent toxicity $\tau(t)$')
+                    color=colors[label], label=label)
+    axs[1].axhline(0, color='gray', linewidth=0.8, linestyle=':')
+    axs[1].set_title('(b) Discussion Pressure τ(t) (IVFS only)')
+    axs[1].set_xlabel('Time')
+    axs[1].set_ylabel('Aggregate discussion pressure τ')
     axs[1].set_xlim(0, SCENARIO_DISPLAY_HOURS)
     axs[1].set_ylim(bottom=0)
-    axs[1].legend(loc='upper right', fontsize=LEGEND_FONT_SIZE)
+    axs[1].legend(fontsize=8)
 
-    # Panel 3 -- user retention, also not captured by SIR
     for label, data in scenario_results.items():
         axs[2].plot(t_scenario, data['solution'][:, 5], linewidth=2.0,
-                    color=SCENARIO_COLORS[label], label=label)
-    axs[2].set_title('(c) Retention path that SIR cannot represent')
-    finish_axes(axs[2], 'Time since scenario start (hours)', 'Active users $U(t)$')
+                    color=colors[label], label=label)
+    axs[2].set_title('(c) User Retention U(t) (IVFS only)')
+    axs[2].set_xlabel('Time')
+    axs[2].set_ylabel('Active users U')
     axs[2].set_xlim(0, SCENARIO_DISPLAY_HOURS)
-    axs[2].legend(loc='upper right', fontsize=LEGEND_FONT_SIZE)
+    axs[2].legend(fontsize=8)
 
-    fig.suptitle('IVF fits the spike better, but the real gain is the toxicity-retention structure', fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', y=1.01)
+    fig.suptitle('Benchmark: IVF vs SIR (IVFS adds discussion-pressure + user structure)', fontsize=13, fontweight='bold', y=1.01)
     fig.tight_layout(pad=2)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
-def main(dataset_path=None, allow_download: bool = False, offline: bool = False) -> None:
-    resolved_dataset = ensure_dataset(dataset_path=dataset_path, allow_download=allow_download, offline=offline)
+def main(dataset_path=None) -> None:
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
     rt_timestamps, *_ = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps)
     window_counts = cal['rt_window']
@@ -210,24 +214,6 @@ def main(dataset_path=None, allow_download: bool = False, offline: bool = False)
     print(f'SIR spike R\u00B2 (0-{spike_end - 1}h): {sir_r2:.4f}, tail mean bias (40-99h): {sir_tail:+.4f}')
     print(f'Saved figure: {FIGURE_PATH}')
 
-    write_json(
-        BENCHMARK_METADATA_PATH,
-        build_run_metadata(
-            script_name='benchmark_models',
-            dataset_path=resolved_dataset,
-            parameters={
-                'fit_window_hours': fit_window_hours,
-                'ivf': {'beta0': beta_ivf, 'gamma0': gamma_ivf, 'lambda0': lambda0_ivf, 'lambda_decay': lambda_decay_ivf, 'v0': v0_ivf},
-                'sir': {'beta': beta_sir, 'gamma': gamma_sir, 'i0': i0_sir},
-            },
-            solver={'method': SOLVER_METHOD, 'rtol': SOLVER_RTOL, 'atol': SOLVER_ATOL, 'max_step': SOLVER_MAX_STEP},
-            outputs={'figure_path': str(FIGURE_PATH), 'ivf_spike_r2': ivf_r2, 'sir_spike_r2': sir_r2},
-            notes={
-                'benchmark_scope': 'SIR can match spike shape partially but cannot represent toxicity feedback, user attrition, or the amplification health tradeoff.'
-            },
-        ),
-    )
-
 
 if __name__ == '__main__':
     import argparse
@@ -235,4 +221,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Benchmark the reduced IVF fit against SIR on the Higgs cascade.')
     add_dataset_cli_arguments(parser)
     args = parser.parse_args()
-    main(dataset_path=args.dataset_path, allow_download=args.allow_download, offline=args.offline)
+    main(dataset_path=args.dataset_path)

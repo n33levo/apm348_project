@@ -11,21 +11,22 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from .common import ASSETS_DIR, solve_trajectory, ensure_layout
+from .common import ASSETS_DIR, ensure_layout
+from .equilibrium_analysis import positive_equilibrium
 from .ivfs_calibration import ensure_dataset, parse_activity_file
 from .ivfs_config import DELTA, FITTED_BETA0, FITTED_GAMMA0, LAMBDA_U, MU_C, NU, RHO, SMOOTH_WINDOW
-from .ivfs_dynamics import full_ivfs_ode, run_sensitivity
+from .ivfs_dynamics import run_sensitivity
 from .plot_style import (ENGAGEMENT_COLOR, FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR,
                          PRESSURE_COLOR, REFERENCE_COLOR, SCENARIO_COLORS, SUPTITLE_FONT_SIZE,
-                         THRESHOLD_COLOR, USER_COLOR, add_threshold_shading, apply_plot_style,
-                         finish_axes)
+                         THRESHOLD_COLOR, USER_COLOR, add_threshold_shading,
+                         add_top_padding, apply_plot_style, finish_axes)
 
 ensure_layout()
 
 # Load Higgs activity data
 def _load_higgs_activity():
     """Return hourly RT, MT, RE counts over the full 168-hour window"""
-    dataset_path = ensure_dataset(offline=True)
+    dataset_path = ensure_dataset()
     rt_timestamps, re_timestamps, mt_timestamps, _ = parse_activity_file(dataset_path)
     t0 = int(min(rt_timestamps.min(), re_timestamps.min(initial=rt_timestamps.min()), mt_timestamps.min(initial=rt_timestamps.min())))
     rt_hours = ((rt_timestamps - t0) / 3600.0).astype(int)
@@ -54,7 +55,7 @@ def make_higgs_overview():
     hrs, rt, re, mt = _load_higgs_activity()
 
     apply_plot_style()
-    fig, axs = plt.subplots(3, 1, figsize=(11, 7.5), sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(12.8, 8.8), sharex=True)
 
     # smooth
     kern = np.ones(SMOOTH_WINDOW) / SMOOTH_WINDOW
@@ -66,6 +67,7 @@ def make_higgs_overview():
     axs[0].plot(hrs, rt_s, color=FIT_COLOR, linewidth=1.6)
     axs[0].set_ylabel('Retweets / hour')
     axs[0].set_title('(a) Retweet Activity')
+    add_top_padding(axs[0], fraction=0.18, keep_bottom=0.0)
     axs[0].annotate('Higgs boson\nannouncement',
                     xy=(hrs[int(np.argmax(rt_s))], rt_s.max()),
                     xytext=(hrs[int(np.argmax(rt_s))] + 18, rt_s.max() * 0.75),
@@ -76,16 +78,18 @@ def make_higgs_overview():
     axs[1].plot(hrs, re_s, color=PRESSURE_COLOR, linewidth=1.6)
     axs[1].set_ylabel('Replies / hour')
     axs[1].set_title('(b) Reply Activity (Proxy for Toxicity)')
+    add_top_padding(axs[1], fraction=0.12, keep_bottom=0.0)
 
     axs[2].fill_between(hrs, mt_s, alpha=0.35, color=USER_COLOR)
     axs[2].plot(hrs, mt_s, color=USER_COLOR, linewidth=1.6)
     axs[2].set_ylabel('Mentions / hour')
     axs[2].set_title('(c) Mention Activity')
     axs[2].set_xlabel('Hours since start of observation window')
+    add_top_padding(axs[2], fraction=0.12, keep_bottom=0.0)
 
     fig.suptitle('Higgs activity overview at one-hour resolution',
                  fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', y=1.01)
-    fig.tight_layout(pad=1.5)
+    fig.tight_layout(pad=1.9, h_pad=1.6)
     out = ASSETS_DIR / 'higgs_overview.png'
     fig.savefig(out, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -104,7 +108,7 @@ def make_sensitivity_bar():
     s_Ustar = [sens_map[name][2] for name in order]
 
     apply_plot_style()
-    fig, axs = plt.subplots(1, 3, figsize=(14, 5))
+    fig, axs = plt.subplots(1, 3, figsize=(15.8, 5.8))
     x = np.arange(len(labels))
     width = 0.55
 
@@ -135,7 +139,7 @@ def make_sensitivity_bar():
 
     fig.suptitle('Moderate-policy sensitivity ranking at the equilibrium point',
                  fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', y=1.01)
-    fig.tight_layout(pad=1.5)
+    fig.tight_layout(pad=1.9, w_pad=2.0)
     out = ASSETS_DIR / 'sensitivity_bars.png'
     fig.savefig(out, dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -155,50 +159,63 @@ def make_r0_bifurcation():
     R0 = alphas * beta0 * I_dfe / (gamma0 + MU_C)
     alpha_crit = (gamma0 + MU_C) / (beta0 * I_dfe)
 
-    # Approximate V* above threshold via steady-state numerics
+    # Use the positive-equilibrium calculation directly instead of a long ODE sweep.
     V_star = np.zeros_like(alphas)
-    t_long = np.linspace(0, 8000, 4000)
     for i, a in enumerate(alphas):
-        if a <= alpha_crit:
+        if a <= 0.0:
             V_star[i] = 0.0
-        else:
-            y0 = [I_dfe * 0.95, 0.01, 0.0, 0.0, 0.0, U_dfe]
-            sol = solve_trajectory(full_ivfs_ode, y0, t_long, args=(a, beta0, gamma0))
-            V_star[i] = sol[-1, 1]
+            continue
+        eq_state = positive_equilibrium(float(a), beta0, gamma0)
+        V_star[i] = 0.0 if eq_state is None else float(eq_state[1])
 
     apply_plot_style()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16.4, 7.2))
 
     ax1.plot(alphas, R0, color=FIT_COLOR, linewidth=2.2)
-    ax1.axhline(1, color=REFERENCE_COLOR, linestyle='--', linewidth=1, label='$\\mathcal{R}_0 = 1$')
+    ax1.axhline(1, color=REFERENCE_COLOR, linestyle='--', linewidth=1)
     ax1.axvline(alpha_crit, color=THRESHOLD_COLOR, linestyle=':', linewidth=1.5,
-                label=f'$\\alpha_{{\\mathrm{{crit}}}} \\approx {alpha_crit:.4f}$')
+                )
     finish_axes(ax1, 'Amplification $\\alpha$', '$\\mathcal{R}_0$')
     ax1.set_title('(a) Basic Reproduction Number vs Amplification')
-    ax1.legend(fontsize=LEGEND_FONT_SIZE)
     ax1.set_xlim(0, 1.2)
     add_threshold_shading(ax1, alpha_crit)
+    add_top_padding(ax1, fraction=0.18, keep_bottom=0.0)
+    ax1.text(1.17, 1.04, '$\\mathcal{R}_0 = 1$', color=REFERENCE_COLOR,
+             fontsize=10, ha='right', va='bottom')
+    ax1.text(alpha_crit + 0.015, 4.45, f'$\\alpha_{{\\mathrm{{crit}}}} \\approx {alpha_crit:.4f}$',
+             color=THRESHOLD_COLOR, fontsize=10, ha='left', va='top', rotation=0,
+             bbox=dict(boxstyle='round,pad=0.18', fc='white', alpha=0.92, ec='none'))
 
     ax2.plot(alphas, V_star, color=ENGAGEMENT_COLOR, linewidth=2.2)
-    ax2.axvline(alpha_crit, color=THRESHOLD_COLOR, linestyle=':', linewidth=1.5,
-                label=f'$\\alpha_{{\\mathrm{{crit}}}} \\approx {alpha_crit:.4f}$')
+    ax2.axvline(alpha_crit, color=THRESHOLD_COLOR, linestyle=':', linewidth=1.5)
     finish_axes(ax2, 'Amplification $\\alpha$', '$V^*$')
     ax2.set_title('(b) Equilibrium Viral Volume vs Amplification')
-    ax2.legend(fontsize=LEGEND_FONT_SIZE)
     ax2.set_xlim(0, 1.2)
     ax2.fill_between(alphas, 0, V_star, alpha=0.2, color=ENGAGEMENT_COLOR)
     add_threshold_shading(ax2, alpha_crit)
-    ax2.annotate('DFE stable\n($V^* = 0$)',
-                 xy=(alpha_crit * 0.5, 0), xytext=(alpha_crit * 0.4, max(V_star) * 0.3),
-                 fontsize=9, ha='center',
-                 arrowprops=dict(arrowstyle='->', color='black'))
-    ax2.annotate('Endemic\nequilibrium',
-                 xy=(alpha_crit * 1.8, V_star[int(len(alphas) * 0.6)]),
-                 fontsize=9, ha='center')
+    add_top_padding(ax2, fraction=0.18, keep_bottom=0.0)
+    ax2.text(alpha_crit + 0.02, 0.158, f'$\\alpha_{{\\mathrm{{crit}}}} \\approx {alpha_crit:.4f}$',
+             color=THRESHOLD_COLOR, fontsize=10, ha='left', va='top',
+             bbox=dict(boxstyle='round,pad=0.18', fc='white', alpha=0.92, ec='none'))
+    ax2.text(0.12, 0.64, 'DFE stable\n($V^* = 0$)', transform=ax2.transAxes,
+             fontsize=11, ha='center', va='center',
+             bbox=dict(boxstyle='round,pad=0.28', fc='white', alpha=0.92))
+    # Arrow annotation pointing from label box to the equilibrium curve
+    arrow_alpha = 0.78
+    arrow_v = float(np.interp(arrow_alpha, alphas, V_star))
+    ax2.annotate(
+        'Positive-equilibrium\nbranch',
+        xy=(arrow_alpha, arrow_v),
+        xytext=(0.95, 0.145),
+        fontsize=11,
+        ha='center', va='top',
+        bbox=dict(boxstyle='round,pad=0.28', fc='white', alpha=0.92),
+        arrowprops=dict(arrowstyle='->', color=ENGAGEMENT_COLOR, lw=1.4),
+    )
 
     fig.suptitle('The calibrated model crosses a sharp amplification threshold',
                  fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', y=1.01)
-    fig.tight_layout(pad=1.5)
+    fig.tight_layout(rect=(0, 0, 1, 0.97), pad=2.2, w_pad=2.8)
     out = ASSETS_DIR / 'r0_bifurcation.png'
     fig.savefig(out, dpi=300, bbox_inches='tight')
     plt.close(fig)

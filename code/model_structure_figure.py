@@ -105,7 +105,7 @@ def main():
     ensure_layout()
     apply_plot_style()
 
-    fig, ax = plt.subplots(figsize=(14.5, 8.5))
+    fig, ax = plt.subplots(figsize=(15.8, 9.4))
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
     ax.set_xlim(0, 14.0)

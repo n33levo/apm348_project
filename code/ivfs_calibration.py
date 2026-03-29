@@ -3,26 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from scipy.integrate import odeint
 from scipy.optimize import minimize
 
-from .common import resolve_higgs_dataset, solve_trajectory
-from .ivfs_config import (DEFAULT_ALLOW_DOWNLOAD, DEFAULT_OFFLINE, DELTA, EXPECTED_HIGGS_SHA256,
-                          FIT_WINDOW_HOURS, HIGGS_TXT, IVF_PARAM_BOUNDS, LAMBDA_U, MU_C,
-                          NU, PHI, PSI, RHO, SMOOTH_WINDOW, SOLVER_ATOL, SOLVER_MAX_STEP,
-                          SOLVER_METHOD, SOLVER_RTOL, TAU_DECAY_MIN_POINTS, TAU_PARAM_BOUNDS,
-                          TAU_PROXY_WEIGHTS, ensure_layout)
+from .common import resolve_higgs_dataset
+from .ivfs_config import (DELTA, FIT_WINDOW_HOURS, IVF_PARAM_BOUNDS, LAMBDA_U, MU_C,
+                          NU, PHI, PSI, RHO, SMOOTH_WINDOW, TAU_DECAY_MIN_POINTS,
+                          TAU_PARAM_BOUNDS, TAU_PROXY_WEIGHTS)
 
 
-def ensure_dataset(dataset_path: str | Path | None = None,
-                   allow_download: bool = DEFAULT_ALLOW_DOWNLOAD,
-                   offline: bool = DEFAULT_OFFLINE) -> Path:
-    """Return a verified local Higgs dataset path."""
-    return resolve_higgs_dataset(
-        dataset_path=dataset_path,
-        allow_download=allow_download,
-        offline=offline,
-        expected_sha256=EXPECTED_HIGGS_SHA256,
-    )
+def ensure_dataset(dataset_path=None):
+    """Locate the Higgs dataset from the repository or a user path."""
+    return resolve_higgs_dataset(dataset_path=dataset_path)
 
 
 def parse_activity_file(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
@@ -176,8 +168,8 @@ def simulate_basic_ivf(beta: float,
                        v0: float,
                        n_steps: int,
                        mu: float = 0.01) -> np.ndarray:
-    """Simulate the baseline IVF fit with a decaying exogenous seed term"""
-    def ivf_ode(t, y, beta_val, gamma_val, mu_val, lam0_val, lam_decay_val):
+    """Simulate the reduced IVF helper used in the Higgs calibration."""
+    def ivf_ode(y, t, beta_val, gamma_val, mu_val, lam0_val, lam_decay_val):
         i_val, v_val, f_val = y
         lam_t = lam0_val * np.exp(-lam_decay_val * t)
         di = -beta_val * i_val * v_val - mu_val * i_val + lam_t
@@ -187,15 +179,12 @@ def simulate_basic_ivf(beta: float,
 
     t_data = np.arange(n_steps, dtype=float)
     v0 = float(np.clip(v0, 1e-5, 0.1))
-    fit_sol = solve_trajectory(
+    fit_sol = odeint(
         ivf_ode,
         [1.0 - v0, v0, 0.0],
         t_data,
         args=(beta, gamma, mu, lambda0, lambda_decay),
-        method=SOLVER_METHOD,
-        rtol=SOLVER_RTOL,
-        atol=SOLVER_ATOL,
-        max_step=SOLVER_MAX_STEP,
+        mxstep=10000,
     )
     v_fit = fit_sol[:, 1]
     return v_fit / (np.max(v_fit) + 1e-12)
