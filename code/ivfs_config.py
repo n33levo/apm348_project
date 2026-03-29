@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from common import ASSETS_DIR, HIGGS_GZ, HIGGS_TXT, HIGGS_URL, ensure_layout
+from .common import ASSETS_DIR, HIGGS_GZ, HIGGS_SHA256, HIGGS_TXT, HIGGS_URL, ensure_layout
 
 
 FIGURE_PATH = ASSETS_DIR / 'apm348_results.png'
@@ -8,6 +8,17 @@ DIAG_FIGURE_PATH = ASSETS_DIR / 'apm348_calibration_diagnostics.png'
 PHI_SENS_FIGURE_PATH = ASSETS_DIR / 'phi_sensitivity.png'
 TAU_COMPARE_FIGURE_PATH = ASSETS_DIR / 'tau_proxy_comparison.png'
 PROFILE_FIGURE_PATH = ASSETS_DIR / 'profile_likelihood.png'
+METADATA_PATH = ASSETS_DIR / 'ivfs_run_metadata.json'
+BENCHMARK_METADATA_PATH = ASSETS_DIR / 'benchmark_run_metadata.json'
+EQUILIBRIUM_METADATA_PATH = ASSETS_DIR / 'equilibrium_run_metadata.json'
+TOXICITY_METADATA_PATH = ASSETS_DIR / 'toxicity_reference_metadata.json'
+
+EXPECTED_HIGGS_SHA256 = HIGGS_SHA256
+
+FITTED_BETA0 = 1.000073
+FITTED_GAMMA0 = 0.300283
+FITTED_LAMBDA0 = 0.199996
+FITTED_LAMBDA_DECAY = 0.044641
 
 # Model params (shared across files)
 KAPPA = 0.8
@@ -33,6 +44,16 @@ SPIKE_WINDOW_HOURS = 35
 TAIL_START_HOURS = 40
 SCENARIO_DISPLAY_HOURS = 200
 SMOOTH_WINDOW = 3
+ROBUST_WINDOW_HOURS = (80, 100, 120)
+ROBUST_BIN_HOURS = (1, 2)
+
+SOLVER_METHOD = 'RK45'
+SOLVER_RTOL = 1e-8
+SOLVER_ATOL = 1e-10
+SOLVER_MAX_STEP = 1.0
+
+DEFAULT_ALLOW_DOWNLOAD = False
+DEFAULT_OFFLINE = False
 
 IVF_PARAM_BOUNDS = (
     (0.2, 4.0),

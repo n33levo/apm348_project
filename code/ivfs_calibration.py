@@ -1,36 +1,28 @@
 from __future__ import annotations
 
-import gzip
-import shutil
-import urllib.request
 from pathlib import Path
 
 import numpy as np
-from scipy.integrate import odeint
 from scipy.optimize import minimize
 
-from ivfs_config import (FIT_WINDOW_HOURS, HIGGS_GZ, HIGGS_TXT, HIGGS_URL, IVF_PARAM_BOUNDS, PHI, PSI,
-                         SMOOTH_WINDOW, TAU_DECAY_MIN_POINTS, TAU_PARAM_BOUNDS, TAU_PROXY_WEIGHTS,
-                         ensure_layout)
+from .common import resolve_higgs_dataset, solve_trajectory
+from .ivfs_config import (DEFAULT_ALLOW_DOWNLOAD, DEFAULT_OFFLINE, DELTA, EXPECTED_HIGGS_SHA256,
+                          FIT_WINDOW_HOURS, HIGGS_TXT, IVF_PARAM_BOUNDS, LAMBDA_U, MU_C,
+                          NU, PHI, PSI, RHO, SMOOTH_WINDOW, SOLVER_ATOL, SOLVER_MAX_STEP,
+                          SOLVER_METHOD, SOLVER_RTOL, TAU_DECAY_MIN_POINTS, TAU_PARAM_BOUNDS,
+                          TAU_PROXY_WEIGHTS, ensure_layout)
 
 
-def ensure_dataset() -> None:
-    """Download and unzip the Higgs data if we don't have it yet"""
-    ensure_layout()
-
-    if HIGGS_TXT.exists():
-        return
-
-    if not HIGGS_GZ.exists():
-        print('[data] dont have the higgs gz, downloading from SNAP...')
-        urllib.request.urlretrieve(HIGGS_URL, HIGGS_GZ)
-        print(f'[data] saved to {HIGGS_GZ}')
-
-    if not HIGGS_TXT.exists() or (HIGGS_GZ.exists() and HIGGS_TXT.stat().st_mtime < HIGGS_GZ.stat().st_mtime):
-        print('[data] unzipping higgs activity file...')
-        with gzip.open(HIGGS_GZ, 'rt') as src, HIGGS_TXT.open('w') as dst:
-            shutil.copyfileobj(src, dst)
-        print(f'[data] Saved {HIGGS_TXT}')
+def ensure_dataset(dataset_path: str | Path | None = None,
+                   allow_download: bool = DEFAULT_ALLOW_DOWNLOAD,
+                   offline: bool = DEFAULT_OFFLINE) -> Path:
+    """Return a verified local Higgs dataset path."""
+    return resolve_higgs_dataset(
+        dataset_path=dataset_path,
+        allow_download=allow_download,
+        offline=offline,
+        expected_sha256=EXPECTED_HIGGS_SHA256,
+    )
 
 
 def parse_activity_file(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
@@ -62,17 +54,24 @@ def parse_activity_file(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray,
 
 def build_hourly_curve(rt_timestamps: np.ndarray,
                        re_timestamps: np.ndarray | None = None,
-                       mt_timestamps: np.ndarray | None = None) -> dict:
-    """Bin RT/RE/MT into hours and build the calibration + pressure-proxy windows"""
+                       mt_timestamps: np.ndarray | None = None,
+                       window_hours: int = FIT_WINDOW_HOURS,
+                       bin_hours: int = 1,
+                       start_hour: int | None = None) -> dict:
+    """Bin RT/RE/MT into time bins and build calibration and proxy windows."""
     t0 = int(rt_timestamps.min())
-    hours = (rt_timestamps - t0) / 3600.0
+    hours = (rt_timestamps - t0) / (3600.0 * float(bin_hours))
     max_hour = int(np.ceil(hours.max()))
     hourly_counts, _ = np.histogram(hours, bins=np.arange(0, max_hour + 1, 1))
 
     peak_hour = int(np.argmax(hourly_counts))
-    start = max(0, peak_hour - 10)
-    end = min(len(hourly_counts), start + 100)
-    start = max(0, end - 100)
+    if start_hour is None:
+        start = max(0, peak_hour - max(10 // max(bin_hours, 1), 1))
+        end = min(len(hourly_counts), start + window_hours)
+        start = max(0, end - window_hours)
+    else:
+        start = max(0, int(start_hour))
+        end = min(len(hourly_counts), start + window_hours)
     window_counts = hourly_counts[start:end].astype(float)
 
     result = {
@@ -85,12 +84,12 @@ def build_hourly_curve(rt_timestamps: np.ndarray,
     re_window = None
     mt_window = None
     if re_timestamps is not None and len(re_timestamps) > 0:
-        hours_re = (re_timestamps - t0) / 3600.0
+        hours_re = (re_timestamps - t0) / (3600.0 * float(bin_hours))
         re_hourly, _ = np.histogram(hours_re, bins=np.arange(0, max_hour + 1, 1))
         re_window = re_hourly[start:end].astype(float)
 
     if mt_timestamps is not None and len(mt_timestamps) > 0:
-        hours_mt = (mt_timestamps - t0) / 3600.0
+        hours_mt = (mt_timestamps - t0) / (3600.0 * float(bin_hours))
         mt_hourly, _ = np.histogram(hours_mt, bins=np.arange(0, max_hour + 1, 1))
         mt_window = mt_hourly[start:end].astype(float)
 
@@ -121,6 +120,9 @@ def build_hourly_curve(rt_timestamps: np.ndarray,
         result['mt_proxy'] = np.clip(mt_proxy, 0.0, 1.0)
         result['reply_ratio'] = np.clip(ratio_norm, 0.0, 1.0)
         result['tau_proxy'] = np.clip(tau_proxy, 0.0, 1.0)
+
+    result['bin_hours'] = int(bin_hours)
+    result['window_hours'] = int(window_hours)
 
     return result
 
@@ -175,7 +177,7 @@ def simulate_basic_ivf(beta: float,
                        n_steps: int,
                        mu: float = 0.01) -> np.ndarray:
     """Simulate the baseline IVF fit with a decaying exogenous seed term"""
-    def ivf_ode(y, t, beta_val, gamma_val, mu_val, lam0_val, lam_decay_val):
+    def ivf_ode(t, y, beta_val, gamma_val, mu_val, lam0_val, lam_decay_val):
         i_val, v_val, f_val = y
         lam_t = lam0_val * np.exp(-lam_decay_val * t)
         di = -beta_val * i_val * v_val - mu_val * i_val + lam_t
@@ -185,8 +187,16 @@ def simulate_basic_ivf(beta: float,
 
     t_data = np.arange(n_steps, dtype=float)
     v0 = float(np.clip(v0, 1e-5, 0.1))
-    fit_sol = odeint(ivf_ode, [1.0 - v0, v0, 0.0], t_data,
-                     args=(beta, gamma, mu, lambda0, lambda_decay), mxstep=10000)
+    fit_sol = solve_trajectory(
+        ivf_ode,
+        [1.0 - v0, v0, 0.0],
+        t_data,
+        args=(beta, gamma, mu, lambda0, lambda_decay),
+        method=SOLVER_METHOD,
+        rtol=SOLVER_RTOL,
+        atol=SOLVER_ATOL,
+        max_step=SOLVER_MAX_STEP,
+    )
     v_fit = fit_sol[:, 1]
     return v_fit / (np.max(v_fit) + 1e-12)
 
@@ -497,7 +507,6 @@ def bootstrap_calibration(empirical_norm: np.ndarray,
         return float(x_star[0]), float(x_star[1])
 
     estimates: dict[str, list[float]] = {'beta0': [], 'gamma0': [], 'alpha_r0': []}
-    from ivfs_config import DELTA, LAMBDA_U, MU_C, NU, RHO
 
     a_loss = DELTA + MU_C
     u_dfe = NU / LAMBDA_U
@@ -521,6 +530,47 @@ def bootstrap_calibration(empirical_norm: np.ndarray,
         arr = np.array(vals)
         ci[key] = (float(np.percentile(arr, 2.5)), float(np.percentile(arr, 97.5)))
     return ci
+
+
+def bootstrap_curve_band(empirical_norm: np.ndarray,
+                         window_counts: np.ndarray,
+                         n_steps: int,
+                         B: int = 120,
+                         seed: int = 348) -> tuple[np.ndarray, np.ndarray]:
+    """Return a pointwise 90% bootstrap band for the fitted IVF curve."""
+    beta0, gamma0, lambda0, lambda_decay, v0_fit, _loss, fitted_norm = fit_basic_ivf(empirical_norm, window_counts)
+    fitted_counts = fitted_norm[:len(empirical_norm)] * np.max(window_counts)
+    rng = np.random.default_rng(seed)
+    curves: list[np.ndarray] = []
+
+    def fast_refit(syn_norm: np.ndarray, syn_counts: np.ndarray) -> tuple[float, float]:
+        weights = 1.0 / (np.sqrt(syn_counts) + 1.0)
+
+        def loss_bg(params: np.ndarray) -> float:
+            beta = float(np.clip(abs(params[0]), IVF_PARAM_BOUNDS[0][0], IVF_PARAM_BOUNDS[0][1]))
+            gamma = float(np.clip(abs(params[1]), IVF_PARAM_BOUNDS[1][0], IVF_PARAM_BOUNDS[1][1]))
+            v_sim = simulate_basic_ivf(beta, gamma, lambda0, lambda_decay, v0_fit, n_steps=len(syn_norm))
+            return float(np.sum(weights * (v_sim - syn_norm) ** 2))
+
+        _fun, x_star = _powell_bounded(loss_bg, np.array([beta0, gamma0]), [IVF_PARAM_BOUNDS[0], IVF_PARAM_BOUNDS[1]], maxiter=1500)
+        return float(x_star[0]), float(x_star[1])
+
+    for _ in range(B):
+        synthetic_counts = rng.poisson(np.maximum(fitted_counts, 0.5)).astype(float)
+        if np.max(synthetic_counts) == 0:
+            continue
+        syn_norm = synthetic_counts / np.max(synthetic_counts)
+        beta_boot, gamma_boot = fast_refit(syn_norm, synthetic_counts)
+        curves.append(
+            simulate_basic_ivf(beta_boot, gamma_boot, lambda0, lambda_decay, v0_fit, n_steps=n_steps)
+        )
+
+    if not curves:
+        baseline = simulate_basic_ivf(beta0, gamma0, lambda0, lambda_decay, v0_fit, n_steps=n_steps)
+        return baseline.copy(), baseline.copy()
+
+    curve_array = np.vstack(curves)
+    return np.percentile(curve_array, 5.0, axis=0), np.percentile(curve_array, 95.0, axis=0)
 
 
 def profile_likelihood(empirical_norm: np.ndarray,

@@ -3,14 +3,14 @@ from __future__ import annotations
 """Check if we have an external toxicity dataset and print a reference summary"""
 
 import csv
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
 
-from common import TOXICITY_DIR, ensure_layout
+from .common import TOXICITY_DIR, build_run_metadata, ensure_layout, write_json
+from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
+from .ivfs_config import FIT_WINDOW_HOURS, PHI, PSI, TOXICITY_METADATA_PATH
+from .ivfs_dynamics import run_scenarios
 
 JIGSAW_COLUMNS = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 RUDDIT_COLUMN = 'offensiveness_score'
@@ -97,8 +97,19 @@ def summarize_ruddit(path: Path) -> dict[str, float]:
 def main() -> None:
     files = candidate_files()
     if not files:
-        print('no toxicity dataset found')
-        print(f'drop a jigsaw or ruddit csv into {TOXICITY_DIR} if you want to run this')
+        print('no external toxicity dataset found')
+        print(f'place a jigsaw or ruddit csv in {TOXICITY_DIR} if you want to run this')
+        write_json(
+            TOXICITY_METADATA_PATH,
+            build_run_metadata(
+                script_name='toxicity_calibration',
+                dataset_path=TOXICITY_DIR,
+                parameters={},
+                solver={},
+                outputs={'found_files': []},
+                notes={'message': 'No external toxicity file was provided by the user.'},
+            ),
+        )
         return
 
     selected = files[0]
@@ -108,19 +119,20 @@ def main() -> None:
     header_set = set(header)
 
     print(f'found: {selected.name}')
+    metadata_outputs: dict[str, object] = {'selected_file': str(selected), 'schema': 'unknown'}
     if all(col in header_set for col in JIGSAW_COLUMNS):
         print('Schema: Jigsaw-style toxicity labels')
         summary = summarize_jigsaw(selected)
         for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
+        metadata_outputs['schema'] = 'jigsaw'
+        metadata_outputs['summary'] = summary
         # use Jigsaw only as an external reference for the tau-side scale
         mean_tau = summary['toxic_any_rate']
         print(f'\n  external tau reference (mean toxicity rate): {mean_tau:.6f}')
         try:
-            from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, PHI, PSI, build_hourly_curve, ensure_dataset,
-                                          fit_basic_ivf, parse_activity_file, run_scenarios)
-            ensure_dataset()
-            rt, *_ = parse_activity_file(HIGGS_TXT)
+            resolved_dataset = ensure_dataset()
+            rt, *_ = parse_activity_file(resolved_dataset)
             cal = build_hourly_curve(rt)
             wc = cal['rt_window']
             en = wc / np.max(wc)
@@ -133,15 +145,36 @@ def main() -> None:
             print(f'  V* at alpha=0.5: {v_star:.6f}')
             print(f'  => implied phi/psi = {ratio:.4f}  (model uses PHI={PHI}, PSI={PSI}, ratio={PHI/PSI:.4f})')
             print(f'  => implied PHI with PSI fixed at {PSI:.3f}: {implied_phi:.4f}')
+            metadata_outputs['implied_reference'] = {
+                'tau_reference': mean_tau,
+                'V_star_moderate': float(v_star),
+                'phi_over_psi': float(ratio),
+                'implied_phi': float(implied_phi),
+            }
         except Exception as exc:
             print(f'  (could not run IVFS model: {exc})')
+            metadata_outputs['ivfs_model_error'] = str(exc)
     elif RUDDIT_COLUMN in header_set:
         print('Schema: Ruddit-style offensiveness scores')
-        for key, value in summarize_ruddit(selected).items():
+        summary = summarize_ruddit(selected)
+        metadata_outputs['schema'] = 'ruddit'
+        metadata_outputs['summary'] = summary
+        for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
     else:
         print('Schema not recognized.')
         print(f'Expected either Jigsaw columns {JIGSAW_COLUMNS} or Ruddit column {RUDDIT_COLUMN}.')
+
+    write_json(
+        TOXICITY_METADATA_PATH,
+        build_run_metadata(
+            script_name='toxicity_calibration',
+            dataset_path=selected,
+            parameters={},
+            solver={},
+            outputs=metadata_outputs,
+        ),
+    )
 
 
 if __name__ == '__main__':

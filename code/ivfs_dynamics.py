@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.integrate import odeint
 
-from ivfs_calibration import fit_tau_proxy, fit_tau_proxy_reference_constrained, simulate_tau_from_v, tau_fit_metrics
-from ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, SCENARIO_ALPHAS, TAU_PARAM_BOUNDS, W)
+from .common import solve_trajectory
+from .ivfs_calibration import fit_tau_proxy, fit_tau_proxy_reference_constrained, simulate_tau_from_v, tau_fit_metrics
+from .ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO,
+                          SCENARIO_ALPHAS, SOLVER_ATOL, SOLVER_MAX_STEP,
+                          SOLVER_METHOD, SOLVER_RTOL, TAU_PARAM_BOUNDS, W)
 
 
-def _ivfs_rhs(y, t, alpha, beta0, gamma0,
+def _ivfs_rhs(t, y, alpha, beta0, gamma0,
               kappa, eta, phi, psi, rho, lambda_u, nu, mu_c, delta, w):
-    """The full 6-state ODE right-hand side (I, V, F, S, tau, U)"""
+    """The full 6-state ODE right-hand side (I, V, F, S, tau, U).
+
+    The implementation clamps negative state values to zero as a numerical safeguard.
+    This modifies the vector field only in a small neighbourhood of the boundary,
+    where adaptive solvers can otherwise step slightly negative.
+    """
     i_val, v_val, f_val, s_val, tau, u_val = y
 
     i_pos = max(i_val, 0.0)
@@ -32,9 +39,9 @@ def _ivfs_rhs(y, t, alpha, beta0, gamma0,
     return [di, dv, df, ds, dtau, du]
 
 
-def full_ivfs_ode(y, t, alpha, beta0, gamma0):
+def full_ivfs_ode(t, y, alpha, beta0, gamma0):
     """Wrap _ivfs_rhs with the default params plugged in"""
-    return _ivfs_rhs(y, t, alpha, beta0, gamma0,
+    return _ivfs_rhs(t, y, alpha, beta0, gamma0,
                      KAPPA, ETA, PHI, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
 
@@ -53,11 +60,14 @@ def run_scenarios(beta0: float,
 
     out = {}
     for label, alpha in scenario_alphas.items():
-        def ode_custom(y, t_now, a, b, g, _phi=float(phi), _psi=float(psi)):
-            return _ivfs_rhs(y, t_now, a, b, g,
+        def ode_custom(t_now, y, a, b, g, _phi=float(phi), _psi=float(psi)):
+            return _ivfs_rhs(t_now, y, a, b, g,
                              KAPPA, ETA, _phi, _psi, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
-        sol = odeint(ode_custom, y0, t, args=(alpha, beta0, gamma0), mxstep=20000)
+        sol = solve_trajectory(
+            ode_custom, y0, t, args=(alpha, beta0, gamma0),
+            method=SOLVER_METHOD, rtol=SOLVER_RTOL, atol=SOLVER_ATOL, max_step=SOLVER_MAX_STEP,
+        )
         v_eq = float(sol[-1, 1])
         tau_eq = float(sol[-1, 4])
         u_eq = float(sol[-1, 5])
@@ -87,11 +97,14 @@ def run_continuation(beta0: float,
     tau_star = []
     u_star_list = []
     for alpha in alphas:
-        def ode_custom(y, t_now, a, b, g, _phi=float(phi), _psi=float(psi)):
-            return _ivfs_rhs(y, t_now, a, b, g,
+        def ode_custom(t_now, y, a, b, g, _phi=float(phi), _psi=float(psi)):
+            return _ivfs_rhs(t_now, y, a, b, g,
                              KAPPA, ETA, _phi, _psi, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
-        sol = odeint(ode_custom, y0, t_grid, args=(float(alpha), beta0, gamma0), mxstep=20000)
+        sol = solve_trajectory(
+            ode_custom, y0, t_grid, args=(float(alpha), beta0, gamma0),
+            method=SOLVER_METHOD, rtol=SOLVER_RTOL, atol=SOLVER_ATOL, max_step=SOLVER_MAX_STEP,
+        )
         v_star_list.append(max(0.0, float(sol[-1, 1])))
         tau_star.append(max(0.0, float(sol[-1, 4])))
         u_star_list.append(float(sol[-1, 5]))
@@ -110,7 +123,10 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
     t_grid = np.linspace(0, 2000, 10001)
 
     def get_eq(ode_func, alpha_ov=alpha, beta0_ov=beta0, gamma0_ov=gamma0):
-        sol = odeint(ode_func, y0, t_grid, args=(alpha_ov, beta0_ov, gamma0_ov), mxstep=20000)
+        sol = solve_trajectory(
+            ode_func, y0, t_grid, args=(alpha_ov, beta0_ov, gamma0_ov),
+            method=SOLVER_METHOD, rtol=SOLVER_RTOL, atol=SOLVER_ATOL, max_step=SOLVER_MAX_STEP,
+        )
         return float(sol[-1, 1]), float(sol[-1, 4]), float(sol[-1, 5])
 
     v_base, tau_base, u_base = get_eq(full_ivfs_ode)
@@ -129,8 +145,8 @@ def run_sensitivity(beta0: float, gamma0: float, alpha: float = 0.5):
         for factor in (0.99, 1.01):
             ov = {name: base_val * factor}
 
-            def ode_mod(y, t, a, b, g, _ov=ov):
-                return _ivfs_rhs(y, t, a, b, g,
+            def ode_mod(t_now, y, a, b, g, _ov=ov):
+                return _ivfs_rhs(t_now, y, a, b, g,
                                  _ov.get('kappa', KAPPA), _ov.get('eta', ETA),
                                  _ov.get('phi', PHI), _ov.get('psi', PSI),
                                  RHO, LAMBDA_U, NU, MU_C, DELTA,
@@ -327,11 +343,14 @@ def run_phi_sensitivity(beta0: float,
         v_vals: list[float] = []
         e_vals: list[float] = []
         for phi_val in phi_grid:
-            def ode_phi(y, t, a, b, g, _phi=float(phi_val)):
-                return _ivfs_rhs(y, t, a, b, g,
+            def ode_phi(t_now, y, a, b, g, _phi=float(phi_val)):
+                return _ivfs_rhs(t_now, y, a, b, g,
                                  KAPPA, ETA, _phi, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
 
-            sol = odeint(ode_phi, y0, t_grid, args=(alpha, beta0, gamma0), mxstep=20000)
+            sol = solve_trajectory(
+                ode_phi, y0, t_grid, args=(alpha, beta0, gamma0),
+                method=SOLVER_METHOD, rtol=SOLVER_RTOL, atol=SOLVER_ATOL, max_step=SOLVER_MAX_STEP,
+            )
             v_eq = max(0.0, float(sol[-1, 1]))
             tau_eq = max(0.0, float(sol[-1, 4]))
             u_eq = float(sol[-1, 5])
@@ -364,11 +383,14 @@ def find_W_for_interior_Emax(beta0: float, gamma0: float,
     for w_test in w_grid:
         e_vals = []
         for alpha in alphas:
-            def ode_w(y, t, a, b, g, _w=w_test):
-                return _ivfs_rhs(y, t, a, b, g, KAPPA, ETA, PHI, PSI,
+            def ode_w(t_now, y, a, b, g, _w=w_test):
+                return _ivfs_rhs(t_now, y, a, b, g, KAPPA, ETA, PHI, PSI,
                                  RHO, LAMBDA_U, NU, MU_C, DELTA, _w)
 
-            sol = odeint(ode_w, y0, t_grid, args=(float(alpha), beta0, gamma0), mxstep=20000)
+            sol = solve_trajectory(
+                ode_w, y0, t_grid, args=(float(alpha), beta0, gamma0),
+                method=SOLVER_METHOD, rtol=SOLVER_RTOL, atol=SOLVER_ATOL, max_step=SOLVER_MAX_STEP,
+            )
             v_eq = max(0.0, float(sol[-1, 1]))
             u_eq = float(sol[-1, 5])
             e_vals.append(float(alpha) * v_eq * u_eq)

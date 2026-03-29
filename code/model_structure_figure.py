@@ -2,19 +2,14 @@ from __future__ import annotations
 
 """Draw the IVFS structure diagram with orthogonal routing for the cross-links"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 import matplotlib
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
-from matplotlib.path import Path as MplPath
 
-from common import ASSETS_DIR, ensure_layout
+from .common import ASSETS_DIR, ensure_layout
+from .plot_style import SUPTITLE_FONT_SIZE, apply_plot_style
 
 
 FIGURE_PATH = ASSETS_DIR / 'ivfs_structure_diagram.png'
@@ -108,6 +103,7 @@ def routed(ax, pts, txt, txt_xy, color, lw=2.0, fs=10):
 
 def main():
     ensure_layout()
+    apply_plot_style()
 
     fig, ax = plt.subplots(figsize=(14.5, 8.5))
     fig.patch.set_facecolor('white')
@@ -118,12 +114,12 @@ def main():
 
     ax.plot([9.8, 9.8], [0.55, 8.0], color='#CBD5E1', lw=1.3, ls='--', zorder=0)
     ax.text(4.5, 8.10, 'Content lifecycle compartments',
-            fontsize=14, fontweight='bold', color='#1E293B', ha='center')
-    ax.text(11.2, 8.10, 'Pressure and user block',
-            fontsize=14, fontweight='bold', color='#1E293B', ha='center')
+            fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', color='#1E293B', ha='center')
+    ax.text(11.2, 8.10, 'Toxicity and user block',
+            fontsize=SUPTITLE_FONT_SIZE, fontweight='bold', color='#1E293B', ha='center')
 
-    names = {'I': 'ignored / latent', 'V': 'viral', 'F': 'fatigued',
-             'S': 'suppressed', 'T': 'latent pressure', 'U': 'active users'}
+    names = {'I': 'ignored content', 'V': 'viral content', 'F': 'fatigued content',
+             'S': 'suppressed content', 'T': 'latent toxicity', 'U': 'active users'}
     for key in C:
         draw_box(ax, key, names[key])
 
@@ -187,7 +183,7 @@ def main():
         7.0, 0.25,
         r'Deterministic compartmental ODE.  '
         r'$\beta_{\mathrm{eff}}=\alpha\beta_0(1+\kappa\tau)$;  '
-        r'latent pressure $\tau$ feeds back into spread, fatigue, and user retention.',
+        r'latent toxicity $\tau$ feeds back into spread, fatigue, and user retention.',
         fontsize=10.5, color='#64748B', ha='center', style='italic')
 
     fig.tight_layout(pad=0.4)

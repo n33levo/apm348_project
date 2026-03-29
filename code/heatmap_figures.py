@@ -7,26 +7,24 @@ Producing:
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import solve_ivp
 
-from common import ASSETS_DIR, ensure_layout
-from ivfs_config import (
-    KAPPA, ETA, PHI, PSI,
-    RHO, LAMBDA_U, NU, MU_C, DELTA, W,
+from .common import ASSETS_DIR, build_run_metadata, ensure_layout, solve_trajectory, write_json
+from .ivfs_config import (
+    DELTA, ETA, FITTED_BETA0, FITTED_GAMMA0, KAPPA, LAMBDA_U, MU_C, NU,
+    PHI, PSI, RHO, SOLVER_ATOL, SOLVER_MAX_STEP, SOLVER_METHOD, SOLVER_RTOL, W,
 )
 
-# Fitted spread parameters from Higgs calibration
-BETA0 = 1.000073
-GAMMA0 = 0.300283
+BETA0 = FITTED_BETA0
+GAMMA0 = FITTED_GAMMA0
+METADATA_PATH = ASSETS_DIR / 'heatmap_metadata.json'
 
 
 # Helpers
@@ -48,10 +46,18 @@ def steady_state(alpha, kappa_val, T=2000):
     U0 = NU / LAMBDA_U
     I0 = RHO * U0 / ((1 + U0) * (DELTA + MU_C))
     y0 = [I0, 0.01, 0.0, 0.0, 0.0, U0]
-    sol = solve_ivp(ivfs_rhs, [0, T], y0, args=(alpha, kappa_val),
-                    method="RK45", rtol=1e-9, atol=1e-11,
-                    dense_output=False, max_step=1.0)
-    return sol.y[:, -1]  # I, V, F, S, tau, U at t=T
+    t_eval = np.linspace(0.0, float(T), 4001)
+    sol = solve_trajectory(
+        ivfs_rhs,
+        y0,
+        t_eval,
+        args=(alpha, kappa_val),
+        method=SOLVER_METHOD,
+        rtol=SOLVER_RTOL,
+        atol=SOLVER_ATOL,
+        max_step=SOLVER_MAX_STEP,
+    )
+    return sol[-1]  # I, V, F, S, tau, U at t=T
 
 
 # Alpha-kappa heatmap of tau*
@@ -142,11 +148,19 @@ def make_phase_portrait():
     y0 = [I0, 0.01, 0.0, 0.0, 0.0, U0]
 
     for (lbl, clr), alp in zip(colours.items(), alphas):
-        sol = solve_ivp(ivfs_rhs, [0, 2000], y0, args=(alp, KAPPA),
-                        method="RK45", rtol=1e-9, atol=1e-11,
-                        max_step=0.5)
-        V = sol.y[1]
-        tau = sol.y[4]
+        t_eval = np.linspace(0.0, 2000.0, 4001)
+        sol = solve_trajectory(
+            ivfs_rhs,
+            y0,
+            t_eval,
+            args=(alp, KAPPA),
+            method=SOLVER_METHOD,
+            rtol=SOLVER_RTOL,
+            atol=SOLVER_ATOL,
+            max_step=0.5,
+        )
+        V = sol[:, 1]
+        tau = sol[:, 4]
         ax.plot(V, tau, color=clr, lw=1.8, label=lbl, zorder=3)
         ax.plot(V[0], tau[0], "o", color=clr, ms=6, zorder=4)
         ax.plot(V[-1], tau[-1], "s", color=clr, ms=7, zorder=4)
@@ -169,4 +183,27 @@ if __name__ == "__main__":
     make_heatmap()
     print("computing phase portrait...")
     make_phase_portrait()
+    write_json(
+        METADATA_PATH,
+        build_run_metadata(
+            script_name='heatmap_figures',
+            dataset_path=ASSETS_DIR,
+            parameters={
+                'beta0': float(BETA0),
+                'gamma0': float(GAMMA0),
+                'kappa_baseline': float(KAPPA),
+            },
+            solver={
+                'method': SOLVER_METHOD,
+                'rtol': SOLVER_RTOL,
+                'atol': SOLVER_ATOL,
+                'max_step': SOLVER_MAX_STEP,
+            },
+            outputs={
+                'alpha_kappa_heatmap': str(ASSETS_DIR / 'alpha_kappa_heatmap.png'),
+                'phase_portrait': str(ASSETS_DIR / 'phase_portrait.png'),
+            },
+            notes={'dataset': 'No external data are required for these deterministic phase diagrams.'},
+        ),
+    )
     print("done.")

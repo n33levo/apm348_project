@@ -26,7 +26,6 @@
 \vspace*{2cm}
 
 {\Large\textsc{University of Toronto}}\\[0.5cm]
-{\large\textsc{Department of Mathematics}}\\[0.5cm]
 {\large APM348: Mathematical Modelling, Winter 2026}\\[0.3cm]
 {\large Instructor: Prof.\ Bernardo Galv\~{a}o-Sousa}\\[2.5cm]
 
@@ -38,7 +37,7 @@ with Toxicity Feedback}\\[1cm]
 Calibrated on the Higgs Twitter Dataset}\\[3cm]
 
 {\large
-Neel Sarkar\\[0.3cm]
+Sohail (Neel) Sarkar\\[0.3cm]
 Piper Scott}\\[2.5cm]
 
 {\large March 2026}
@@ -50,7 +49,7 @@ Piper Scott}\\[2.5cm]
 %  ABSTRACT AND TOC
 % ============================================================
 \begin{abstract}
-We develop a deterministic compartmental ordinary differential equation model for the lifecycle of rage-bait content on social media. The model tracks four content states (ignored, viral, fatigued, and suppressed) together with a latent discussion-pressure variable that captures toxicity feedback and an active-user pool subject to pressure-dependent attrition. We calibrate the spread block on the SNAP Higgs Twitter retweet stream, use same-dataset reply activity as a proxy for discussion pressure, and compare against an external Jigsaw toxicity reference scale. The fitted model produces a clear amplification threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$, below which viral spread is not self-sustaining. Above this threshold, stronger amplification raises long-run viral volume and discussion pressure while lowering user retention. A core feature of the model is the toxicity feedback loop: viral content drives discussion pressure, which amplifies further spread and accelerates user departure. Our main contribution is the content-centric framing: unlike most existing compartmental models for social-media dynamics, which classify users into behavioural states, we classify content items into lifecycle compartments and couple them to a toxicity-pressure state and user attrition. The principal limitation is that the pressure block is proxy-grounded rather than directly calibrated to observed text toxicity, so the pressure parameters are only partially identified from the available data.
+We develop a deterministic compartmental ordinary differential equation model for the lifecycle of rage bait content on social media. The model tracks four content states (ignored, viral, fatigued, and suppressed) together with a latent toxicity variable $\tau$ and an active user pool subject to toxicity dependent attrition. Throughout this report, toxicity means the toxicity of rage baiting: a reply driven, high arousal discussion pressure represented by $\tau$ and by the feedback loop it creates with viral spread and user loss. It is not a direct text classifier score. We calibrate the spread block on the SNAP Higgs Twitter retweet stream, use same dataset reply activity as the observable proxy for this toxicity, and compare its scale against an external Jigsaw text toxicity reference. The fitted model produces a clear amplification threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$, below which viral spread is not self sustaining. Above this threshold, stronger amplification raises long run viral volume and toxicity while lowering user retention. A core feature of the model is the toxicity feedback loop: viral content drives reply activity and latent toxicity, which amplifies further spread and accelerates user departure. Our main contribution is the content centric framing: unlike most existing compartmental models for social media dynamics, which classify users into behavioural states, we classify content items into lifecycle compartments and couple them to a toxicity state and user attrition. The principal limitation is that the toxicity block is proxy grounded rather than directly calibrated to same platform text toxicity, so the pressure parameters are only partially identified from the available data.
 \end{abstract}
 
 \newpage
@@ -73,7 +72,7 @@ This suggests a tradeoff at the platform level. Amplification can increase short
 
 Compartmental models from epidemiology have been applied widely to information dynamics. The classical SIR (Susceptible-Infected-Recovered) model partitions a population into compartments and describes transitions between them using ordinary differential equations. Daley and Kendall \cite{daleyKendall1964} noted the analogy between disease transmission and information spread early on and proposed a rumour-spreading model with similar compartmental structure. In the social media setting, De Domenico et al.\ \cite{domenico2013} used the Higgs Twitter dataset to study the anatomy of a scientific rumour, fitting epidemic-style models to retweet cascades.
 
-The DABAR modelling procedure taught in this course (\emph{Define, Assume, Build, Assess, Report}) is the framework we follow. We define the modelling question around platform amplification tradeoffs, state our assumptions about aggregate content dynamics, build a six-state compartmental ODE system, assess it against empirical data and analytical checks, and report the results with honest attention to limitations.
+The DABAR modelling procedure taught in this course (\emph{Define, Assume, Build, Assess, Report}) is the framework we follow. We define the modelling question around platform amplification tradeoffs, state our assumptions about aggregate content dynamics, build a six-state compartmental ODE system, assess it against empirical data and analytical checks, and report the results with clear attention to limitations.
 
 The IVFS model we develop falls into the category of a \emph{deterministic dynamical model} in the language of the course. It is a system of first-order autonomous ODEs whose state variables are continuous and whose parameters are either calibrated from data or fixed at scenario values. The model is not stochastic, not optimization-based, and not probabilistic. Its core analytical tools are equilibrium analysis, linearized stability, threshold quantities, and sensitivity indices, all of which are covered extensively in the course material.
 
@@ -83,7 +82,7 @@ Most existing compartmental models for social-media dynamics classify \emph{user
 
 Our model takes a different approach. Instead of compartmentalizing users, we compartmentalize \emph{content items} into lifecycle states: content is created, may go viral, eventually fatigues, and may be moderated. This content-centric framing works at the aggregate level where platform data is most available (retweet counts, reply volumes, and moderation actions are all content-level observables), separates amplification (which acts on content visibility) from user response (captured by a single aggregate user pool), and lets us study the platform health tradeoff directly through content lifecycle dynamics rather than individual user psychology.
 
-The tradeoff is that we lose resolution on user heterogeneity and network topology. We treat users as a single aggregate pool $U$ with constant replenishment and pressure-dependent attrition. We made this choice on purpose: it keeps the system tractable (six states rather than dozens) while still capturing the feedback loop between content amplification, discussion pressure, and platform health.
+The tradeoff is that we lose resolution on user heterogeneity and network topology. We treat users as a single aggregate pool $U$ with constant replenishment and pressure-dependent attrition. This keeps the system tractable (six states rather than dozens) while still capturing the feedback loop between content amplification, discussion pressure, and platform health.
 
 \subsection{The dataset at a glance}
 
@@ -92,7 +91,7 @@ We use the SNAP Higgs Twitter dataset \cite{domenico2013} as our main data sourc
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/higgs_overview.png}
-\caption{Hourly activity in the Higgs Twitter dataset over the full 168-hour observation window. (a)~Retweet volume shows the sharp viral cascade used for spread calibration. (b)~Reply volume provides the discussion-pressure proxy. (c)~Mention volume is noisier and not used directly.}
+\caption{Hourly retweet, reply, and mention counts in the SNAP Higgs Twitter dataset over the full 168-hour observation window. The retweet panel isolates the dominant burst used for spread calibration, while the reply panel tracks the same event with a high-arousal discussion signal that we use as the observable proxy for latent toxicity. The figure matters because it shows, directly from the raw data, why the project separates spread calibration from reply-driven toxicity calibration.}
 \label{fig:higgs_overview}
 \end{figure}
 
@@ -100,6 +99,10 @@ We use the SNAP Higgs Twitter dataset \cite{domenico2013} as our main data sourc
 \label{sec:ragebait-def}
 
 We define \emph{rage-bait content} operationally as any content that generates disproportionate reply and engagement activity relative to its passive resharing volume, captured in our model by the ratio of discussion pressure~$\tau$ to viral volume~$V$. This is a model-level definition, not a colloquial one: content is ``rage-bait'' whenever the pressure-to-virality ratio is elevated, regardless of the topic's political valence or emotional register. The Higgs boson announcement satisfies this definition empirically. During the main cascade, reply and mention activity surges well beyond what the retweet volume alone would predict (Figure~\ref{fig:higgs_overview}b and c), consistent with high-arousal content dynamics in which the event provokes intense discussion, not just passive resharing. So the Higgs cascade works as a demonstration dataset for the IVFS model: it exhibits the structural signature, a high $\tau/V$ ratio, that the model is designed to capture, even though the underlying content is scientific rather than politically provocative.
+
+Throughout the report, when we use the word \emph{toxicity}, we mean this same latent rage bait toxicity: the reply driven discussion pressure represented by $\tau$ and by its feedback into spread, fatigue, and user attrition. This is an aggregate behavioural quantity inferred from Higgs reply activity, not a direct text label. When we specifically mean \emph{Jigsaw toxicity}, we mean the external text level annotation scores from the Jigsaw dataset, which are used only as an outside reference for scale.
+
+Throughout this report we return to one central question: how does algorithmic amplification change the long-run balance between virality, discussion pressure, and user retention in a content-centric social-media system? The sections that follow build the model, establish the threshold, calibrate it against data, and trace the answer through to a quantitative policy comparison.
 
 % ============================================================
 %  2. PREVIOUS MATHEMATICAL MODELS
@@ -153,7 +156,7 @@ Addai et al.\ \cite{addai2025} & Users & Toxicity labels & No & Simulated \\
 \end{tabular}
 \end{table}
 
-The main difference is the content-centric perspective. Since we track content through lifecycle stages rather than users through behavioural stages, the state variables correspond directly to observable platform quantities (content volumes, reply rates, active user counts) rather than latent user states that would need to be inferred.
+The main difference is the content centric perspective. Since we track content through lifecycle stages rather than users through behavioural stages, the state variables correspond directly to observable platform quantities (content volumes, reply rates, active user counts) rather than latent user states that would need to be inferred. Our toxicity variable $\tau$ is driven by reply volume, the same behavioural signal the Higgs dataset provides, rather than by text level toxicity labels.
 
 
 % ============================================================
@@ -164,15 +167,15 @@ The main difference is the content-centric perspective. Since we track content t
 
 Our main question is:
 \begin{quote}
-\emph{How does platform amplification shape the full lifecycle of rage-bait content, from creation through virality, fatigue, and suppression, and what are the downstream consequences for discussion toxicity and long-run user retention?}
+\emph{How does platform amplification shape the full lifecycle of rage bait content, from creation through virality, fatigue, and suppression, and what are the downstream consequences for toxicity and long run user retention?}
 \end{quote}
 
 We investigate five subsidiary questions:
 \begin{enumerate}[leftmargin=1.5em]
     \item At what amplification level does viral spread become self-sustaining, and what is the mathematical nature of this threshold (transcritical bifurcation, forward or backward)?
-    \item How does the toxicity feedback loop (where viral content drives discussion pressure, which in turn amplifies further spread) affect the equilibrium structure of the system?
+    \item How does the toxicity feedback loop (where viral content drives reply activity and latent toxicity, which in turn amplifies further spread) affect the equilibrium structure of the system?
     \item How sensitive are the long-run equilibrium outcomes ($V^*$, $\tau^*$, $U^*$) to the parameters governing the pressure block, and which parameters matter most?
-    \item Can a single dataset (the SNAP Higgs Twitter activity stream) support both a spread calibration and a discussion-pressure proxy without overclaiming direct toxicity measurement?
+    \item Can a single dataset (the SNAP Higgs Twitter activity stream) support both a spread calibration and a toxicity proxy, using reply activity as the observable signal of rage bait toxicity?
     \item What is the quantitative tradeoff between platform engagement and platform health, and is there an amplification level that balances the two?
 \end{enumerate}
 
@@ -198,7 +201,7 @@ The modelling approach follows the DABAR procedure:
 
 The empirical strategy has two stages. First, we calibrate the spread block using a reduced IVF helper model fitted to the Higgs retweet stream. This stage identifies the spread-side parameters $(\beta_0, \gamma_0, \lambda_0, d_\lambda)$ with narrow confidence intervals. Second, we simulate the full six-state IVFS model under different amplification scenarios to study the policy tradeoff. The pressure block is handled separately: same-dataset reply activity (RE) serves as a proxy for latent discussion pressure, and the Jigsaw toxicity dataset provides an external reference scale for the magnitude of $\tau$, but neither source uniquely pins down the pressure parameters $(\phi, \psi)$.
 
-We split the calibration this way on purpose. It means the spread calibration is clean and well-identified, while the pressure block is honestly reported as partially constrained. This is better than forcing a joint calibration that would mix well-identified and poorly-identified parameters.
+This split means the spread calibration is clean and well-identified, while the pressure block is reported as partially constrained. This is better than forcing a joint calibration that would mix well-identified and poorly-identified parameters.
 
 % ============================================================
 %  5. FORMULATION OF THE MODEL
@@ -220,7 +223,7 @@ $I(t)$ & Ignored or not-yet-viral content. This compartment represents content i
 $V(t)$ & Viral content. Content items that have achieved high visibility and are being actively shared and engaged with. This is the compartment most directly affected by the amplification parameter $\alpha$. \\[0.3em]
 $F(t)$ & Fatigued content. Content that was previously viral but has lost engagement momentum. Users have moved on, and the content is no longer being actively shared. \\[0.3em]
 $S(t)$ & Suppressed or moderated content. Content that has been removed or de-ranked by platform moderation. In the current model, moderation acts only on ignored content ($I \to S$). \\[0.3em]
-$\tau(t)$ & Latent discussion pressure. A scalar state variable representing the aggregate intensity of harmful, heated, or polarized discussion on the platform. This is not directly observed text toxicity; it is a latent variable driven by viral content and relaxing over time. \\[0.3em]
+$\tau(t)$ & Latent toxicity of rage baiting. A scalar state variable representing the aggregate level of reply driven, high arousal discussion pressure on the platform. In the calibration, $\tau$ is proxied by same dataset reply volume (RE events from Higgs), which is the behavioural signal most directly consistent with rage bait dynamics: content that provokes replies rather than passive reshares. This is not directly observed text toxicity; it is a latent variable driven by viral content and relaxing over time. \\[0.3em]
 $U(t)$ & Active users. The aggregate number of users actively participating on the platform. This pool is replenished at a constant rate and depleted at a rate that increases with discussion pressure. \\
 \bottomrule
 \end{tabular}
@@ -264,21 +267,23 @@ The amplification parameter $\alpha \in [0,1]$ is the key policy variable. It re
 \subsection{Modelling assumptions}
 \label{sec:assumptions}
 
-The model rests on the following assumptions:
+The assumptions in the IVFS model are not arbitrary simplifications added for convenience. Each one is a modelling choice tied to the level of data available and to the specific policy question we want to answer. The Higgs dataset gives aggregate event streams, not individual exposure histories, so the right standard is whether an assumption is appropriate for aggregate platform scale dynamics. With that in mind, the model uses the following assumptions:
 
 \begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Continuous deterministic flows.} Aggregate content and user activity can be approximated by continuous variables evolving according to deterministic ODEs. This is standard in compartmental modelling and holds when population sizes are large enough that stochastic noise is small. For the Higgs dataset, the total event volume (563,069 events) supports this approximation.
+    \item \textbf{Continuous deterministic flows.} Aggregate content and user activity can be approximated by continuous variables evolving according to deterministic ODEs. This is appropriate here because the calibration window contains very large event counts, so the main object of interest is the mean cascade shape rather than individual retweet randomness. The deterministic approximation is therefore a deliberate coarse graining step, not an attempt to model micro-level behaviour.
 
-    \item \textbf{Content lifecycle compartments.} Content items can be meaningfully grouped into four lifecycle stages: ignored, viral, fatigued, and suppressed. The boundaries between these stages are not sharp in reality, but the compartmental approximation captures the main dynamics of content creation, amplification, decay, and removal.
+    \item \textbf{Content lifecycle compartments.} Content items can be meaningfully grouped into four lifecycle stages: ignored, viral, fatigued, and suppressed. These boundaries are stylized, but they are exactly the level at which platform policy acts. Platforms tune visibility, moderation, and ranking at the content level, so a content-centric partition is the right abstraction for studying amplification policy.
 
-    \item \textbf{Homogeneous mixing.} We assume that all content items in a given compartment have equal probability of transitioning to other compartments. This is the standard well-mixed assumption in compartmental models. It ignores network structure, community effects, and content heterogeneity. We discuss the consequences of this assumption in Section~\ref{sec:limitations}.
+    \item \textbf{Homogeneous mixing.} We assume that all content items in a given compartment have equal probability of transitioning to other compartments. This loses network topology and community structure, but it is what allows the model to answer a platform-level control question with public aggregate data. A network-aware model would require information that the present dataset does not contain.
 
-    \item \textbf{Scalar pressure.} Harmful discussion dynamics are summarized by a single scalar state $\tau$. In reality, online toxicity is multidimensional (hate speech, harassment, misinformation, etc.), but a single-index representation keeps the model tractable and still captures the essential feedback loop.
+    \item \textbf{Scalar pressure.} Harmful discussion dynamics are summarized by a single scalar state $\tau$. This does not claim that all forms of online toxicity are the same. It claims only that, for the present question, a one-dimensional latent toxicity variable is enough to capture the feedback loop between virality, heated reply activity, and user loss.
 
-    \item \textbf{Aggregate user pool.} The active-user population is a single aggregate pool with constant replenishment and pressure-dependent attrition. We do not model user heterogeneity, user types, or network-dependent behaviour.
+    \item \textbf{Aggregate user pool.} The active-user population is a single aggregate pool with constant replenishment and pressure-dependent attrition. This is justified because the report asks how platform health responds in the aggregate. The variable $U$ is not intended to resolve user types; it is intended to detect the directional retention cost of amplification.
 
-    \item \textbf{Local parameter constancy.} The spread-side parameters $(\beta_0, \gamma_0)$ are treated as locally constant on the 100-hour calibration window. The additional 48-hour window validation (Section~\ref{sec:windowval}) shows that the model shape is robust across windows, even though the parameter values shift.
+    \item \textbf{Local parameter constancy.} The spread-side parameters $(\beta_0, \gamma_0)$ are treated as locally constant on the 100-hour calibration window. This is an identification choice: we calibrate the dominant burst and immediate decay on a fixed event window, then check robustness by refitting alternate windows and coarser binning choices rather than pretending the same coefficients must hold identically over the full week.
 \end{enumerate}
+
+The common theme is that each assumption trades granularity for identifiability. What we learn from this section is that the model is deliberately matched to the resolution of the available data and to the platform-level policy question, even though that leaves important micro-level effects for future work.
 
 \subsection{The IVFS equations}
 \label{sec:equations}
@@ -371,7 +376,7 @@ Viral content drives pressure, pressure amplifies the effective spread rate, and
 \draw[feedback] (tau.south) -- ++(0,-1.1) -| node[lbl, above, pos=0.5] {\scriptsize$w\tau$} (U.south);
 
 \end{tikzpicture}
-\caption{State-flow structure of the IVFS model. Solid black arrows show content transitions and forcing terms, dashed red arrows show pressure-dependent feedback modifiers, and gray arrows denote sink losses. All content compartments also decay at rate~$\mu_c$ (not shown). Content moves through I$\to$V$\to$F with moderation diverting I$\to$S. Viral content drives latent reply pressure~$\tau$, which feeds back into both spread and fatigue rates and accelerates user attrition.}
+\caption{Mechanism diagram for the six-state IVFS model. The figure shows the content lifecycle $I \to V \to F$ with moderation diverting flow to $S$, together with the latent toxicity state $\tau$ and the active-user pool $U$. The central feedback loop is visible in one picture: viral content raises toxicity, toxicity modifies spread and fatigue, and toxicity also lowers user retention. This is the core mechanism of the paper, so the diagram matters because it makes the amplification-toxicity-to-retention tradeoff interpretable before any equations or calibration results are read.}
 \label{fig:structure}
 \end{figure}
 
@@ -413,7 +418,11 @@ This threshold divides the amplification parameter space into two regimes:
     \item $\alpha > \alpha_{\mathrm{crit}}$: the DFE is unstable, and a positive (endemic) equilibrium with $V^* > 0$ and $\tau^* > 0$ exists.
 \end{itemize}
 
-We emphasize that this $\mathcal{R}_0$ is computed from linearization of the $\dot{V}$ equation at the DFE. A full next-generation matrix derivation would strengthen this result; we discuss this as a future extension in Section~\ref{sec:nextsteps}.
+This $\mathcal{R}_0$ comes from linearizing the $\dot{V}$ equation at the DFE. A full next-generation matrix derivation would strengthen this result; we discuss this as a future extension in Section~\ref{sec:nextsteps}.
+
+The mechanism the model proposes is a nonlinear amplification-pressure feedback loop: platform amplification $\alpha$ converts ignored content to viral, viral content builds latent discussion pressure, and that pressure boosts further spread while eroding the user base. Whether this feedback self-sustains depends entirely on whether $\alpha$ exceeds $\alpha_{\mathrm{crit}}$.
+
+In the numerical implementation, trajectories are integrated with SciPy's adaptive `solve\_ivp` solver using explicit tolerances and a one-hour maximum step. The code also clamps small negative state excursions back to zero inside the right-hand side evaluation. This does not change the analytical model; it is a numerical safeguard that keeps the computed trajectory inside the nonnegative region established above.
 
 % ============================================================
 %  6. ANALYSIS OF THE MODEL
@@ -500,7 +509,7 @@ Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/r0_bifurcation.png}
-\caption{Transcritical bifurcation in the IVFS model. (a)~Basic reproduction number $\mathcal{R}_0$ as a function of amplification~$\alpha$, with the critical threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$. (b)~Equilibrium viral volume $V^*$ computed numerically; the DFE is stable for $\alpha < \alpha_{\mathrm{crit}}$ and a positive endemic equilibrium emerges above the threshold.}
+\caption{Threshold evidence from the calibrated IVFS model. Panel~(a) plots the basic reproduction number $\mathcal{R}_0$ against amplification strength $\alpha$, and panel~(b) plots the numerically computed equilibrium viral volume $V^*$ over the same sweep. The sharp onset near $\alpha_{\mathrm{crit}} \approx 0.3165$ makes the transcritical threshold visually explicit, which matters because the platform-health tradeoff in later sections only appears once amplification crosses this critical level.}
 \label{fig:bifurcation}
 \end{figure}
 
@@ -579,10 +588,11 @@ Figure~\ref{fig:sensitivity_bars} visualizes these sensitivity indices as bar ch
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/sensitivity_bars.png}
-\caption{Normalized sensitivity indices $S(x,p)$ for the three key equilibrium quantities at the moderate scenario ($\alpha=0.5$). Green bars denote positive sensitivity (increasing $p$ increases $x$); red bars denote negative sensitivity. The spread-side parameters $\alpha$, $\beta_0$, and $\gamma_0$ dominate the response of $V^*$ and $\tau^*$, while the pressure-side parameters $\phi$, $\psi$, and $w$ primarily affect $U^*$.}
+\caption{Normalized sensitivity indices for the equilibrium outputs $V^*$, $\tau^*$, and $U^*$ under the moderate policy scenario $\alpha=0.5$. Positive bars indicate that increasing a parameter raises the corresponding equilibrium quantity, while negative bars indicate the opposite. The figure shows that spread-side parameters dominate virality and toxicity, whereas pressure-side parameters matter most for user retention, which is important for interpreting which levers are empirically identified and which levers drive the health tradeoff.}
 \label{fig:sensitivity_bars}
 \end{figure}
 
+The structural insight from the analysis is that spread-side and pressure-side parameters govern nearly orthogonal outcomes: $\gamma_0$, $\alpha$, and $\beta_0$ control viral volume and discussion pressure, while $\phi$, $\psi$, and $w$ primarily determine user retention. These are two largely independent levers available to a platform choosing where to intervene.
 
 % ============================================================
 %  7. DATA AND CALIBRATION
@@ -644,7 +654,7 @@ The full-window $R^2 = 0.92$ indicates that the reduced IVF helper model explain
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_calibration_diagnostics.png}
-\caption{Calibration diagnostics for the Higgs retweet fit. The panels show (a)~the spike-region fit, (b)~the full-window fit with tail behaviour, (c)~the selected pressure proxy with proxy family comparisons, and (d)~residuals.}
+\caption{Calibration evidence for the main 100-hour Higgs retweet window. Panels~(a) and~(b) show observed hourly retweets, the fitted IVF curve, and a bootstrap fit band over the spike and over the full window; panel~(c) compares the selected reply-based toxicity proxy with alternative same-dataset proxy constructions; panel~(d) shows residual structure across time. The figure is intentionally honest about the tail mismatch: the spike is fitted tightly, while the later tail is harder because the deterministic helper compresses a noisier and lower-volume phase of the cascade. This matters because it separates what is strongly identified, namely the spread-side shape, from what is only approximate in the late decay.}
 \label{fig:cal}
 \end{figure}
 
@@ -665,27 +675,29 @@ The narrow intervals confirm that the spread parameters are practically identifi
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/profile_likelihood.png}
-\caption{Profile likelihood curves for $\beta_0$ and $\gamma_0$. Both curves show clear minima near the fitted values, supporting practical identifiability.}
+\caption{Profile likelihood curves for the fitted spread parameters $\beta_0$ and $\gamma_0$ on the Higgs calibration window. Each panel fixes one parameter over a grid and re-optimizes the remaining parameters, so the minimum indicates how sharply the data select the fitted value. The clear local minima support practical identifiability of the spread block, which matters because the threshold calculation depends directly on these two parameters.}
 \label{fig:profile}
 \end{figure}
 
 \subsection{Benchmark against a classical SIR model}
 
-To verify that the lifecycle structure in the IVFS model is empirically justified, we benchmark the reduced IVF helper model against a classical three-parameter SIR model fitted to the same normalized retweet window. On the spike-focused comparison window (Figure~\ref{fig:benchmark}), the IVF fit achieves $R^2 \approx 0.889$ while the SIR alternative achieves $R^2 \approx 0.690$. The IVF model captures the asymmetric spike shape and the gradual decay tail significantly better than SIR, which supports the added lifecycle structure (specifically, the distinction between viral and fatigued content) as an empirically grounded modelling choice rather than an arbitrary complication.
+To verify that the lifecycle structure in the IVFS model is empirically justified, we benchmark the reduced IVF helper model against a classical three-parameter SIR model fitted to the same normalized retweet window. On the spike-focused comparison window (Figure~\ref{fig:benchmark}), the IVF fit achieves $R^2 \approx 0.889$ while the SIR alternative achieves $R^2 \approx 0.690$. The IVF model captures the asymmetric spike shape and the gradual decay tail significantly better than SIR, which supports the added lifecycle structure, especially the distinction between viral and fatigued content, as an empirically grounded modelling choice.
+
+Just as important is what the benchmark cannot test. A classical SIR model has no state corresponding to latent toxicity and no user-retention block, so it cannot address the main policy question of this report. It can only ask whether a three-state epidemic curve can mimic the Higgs spike. The benchmark therefore validates the spread-side shape advantage of IVF over SIR, while the full IVFS model is needed for the toxicity and platform-health tradeoff itself.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/benchmark_curve_compare.png}
-\caption{Benchmark comparison between the reduced IVF helper model and a classical SIR alternative on the main Higgs retweet window. The IVF model reproduces the asymmetric spike shape and decay tail more accurately.}
+\caption{Benchmark comparison between the reduced IVF helper model and a classical three-parameter SIR alternative on the same Higgs retweet window. The left panel compares the empirical spike to both fitted curves, while the two right panels show toxicity and user-retention trajectories that only the IVFS framework can represent. The key takeaway is twofold: IVF fits the observed spike shape better than SIR, and the real scientific gain of IVFS is that it carries the calibration into a toxicity-retention tradeoff that SIR cannot test.}
 \label{fig:benchmark}
 \end{figure}
 
-\subsection{Observed proxy for discussion pressure}
+\subsection{Observed proxy for toxicity}
 \label{sec:proxy}
 
-The interpretation of $\tau$ is one of the most important modelling decisions in this project. We define $\tau(t)$ as a \emph{latent} discussion-pressure state, not as directly observed text toxicity. The Higgs dataset contains no tweet text, so direct toxicity measurement is not possible. Instead, we use same-dataset reply activity (RE) as the primary proxy for discussion pressure.
+The interpretation of $\tau$ is one of the most important modelling decisions in this project. In this report, $\tau(t)$ is the latent toxicity of rage baiting, namely the reply driven discussion pressure generated by viral content and fed back into spread and user loss. The Higgs dataset contains no tweet text, so same dataset text toxicity cannot be measured directly. Instead, we use same dataset reply activity (RE) as the primary observable proxy for this toxicity.
 
-Replies on social media are more likely to represent active discussion (including heated or contentious exchanges) than retweets (which are primarily a spreading mechanism) or mentions (which may be purely informational). High reply volume during a viral event is therefore a plausible indicator of elevated discussion pressure, even without text-level toxicity labels.
+Replies on social media are more likely to represent active discussion (including heated or contentious exchanges) than retweets (which are primarily a spreading mechanism) or mentions (which may be purely informational). High reply volume during a viral event is therefore a plausible indicator of elevated rage bait toxicity, even without text level toxicity labels.
 
 We construct a proxy family and select the best-supported target:
 \begin{itemize}[leftmargin=1.5em]
@@ -698,19 +710,19 @@ The RE proxy is the clear winner in terms of fit quality, and it is also the mos
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
-\caption{Pressure-proxy comparison. Panel~(a) compares the selected RE proxy against several pressure-block configurations. Panel~(b) shows the long-run steady-state pressure levels under each configuration.}
+\caption{Toxicity-calibration evidence from Higgs replies and the external Jigsaw reference. Panel~(a) compares the selected reply-based proxy with the baseline, decay-anchored, unconstrained, and reference-constrained toxicity trajectories; panel~(b) compares the resulting long-run equilibrium toxicity levels under the three policy scenarios. The figure matters because it shows both the empirical support for the RE proxy and the remaining identification gap in the pressure block.}
 \label{fig:taucompare}
 \end{figure}
 
-\subsection{External toxicity reference}
+\subsection{External Jigsaw text toxicity reference}
 
-The Jigsaw toxicity dataset \cite{borkan2019} (available in the repository as \texttt{data/toxicity/train.csv}) provides an external reference scale for the magnitude of discussion pressure. This dataset contains text-level toxicity labels from a different platform context (Wikipedia talk pages). We use it only to calibrate the \emph{scale} of $\tau$, not to fit the pressure dynamics. The mean toxicity rate in the Jigsaw data is approximately $0.1017$, which gives an external-scale comparison value of $\phi \approx 0.1459$ when $\psi = 0.1$ and the moderate-scenario equilibrium viral volume is used for scaling.
+The Jigsaw toxicity dataset \cite{borkan2019}, when supplied separately by the user in \texttt{data/toxicity/train.csv}, provides an external text toxicity reference for the magnitude of $\tau$. It is not part of the core Higgs dataset and is not required for the main spread calibration. This dataset contains text level toxicity labels from a different platform context, namely Wikipedia talk pages. We use it only to calibrate the \emph{scale} of $\tau$, not to fit the toxicity dynamics. The mean Jigsaw toxicity rate is approximately $0.1017$, which gives an external scale comparison value of $\phi \approx 0.1459$ when $\psi = 0.1$ and the moderate scenario equilibrium viral volume is used for scaling.
 
 \subsection{Reference-constrained calibration}
 
 The pressure parameters $(\phi, \psi)$ are not uniquely identified from the same-dataset proxy alone. The unconstrained fit achieves good proxy agreement ($R^2 \approx 0.74$) but at a pressure scale ($\tau^*_{\mathrm{mod}} \approx 0.067$) that is inconsistent with the external Jigsaw reference. We resolve this identification problem partially through a \emph{reference-constrained} approach.
 
-The external toxicity rate anchors the steady-state gain ratio:
+The external Jigsaw text toxicity rate anchors the steady state gain ratio:
 \[
 r = \frac{\phi}{\psi} = \frac{\tau_{\mathrm{ref}}}{V^*_{\mathrm{mod}}} \approx \frac{0.1017}{0.0697} \approx 1.46.
 \]
@@ -742,6 +754,9 @@ Higgs (boundary-constrained)\footnotemark & $0.9596$ & $1.0000$ & $0.7422$ & $0.
 
 The reference-constrained configuration achieves better proxy-fit quality ($R^2 \approx 0.41$) than either the baseline ($R^2 \approx 0.18$) or the plain external-scale setting ($R^2 \approx 0.31$), while maintaining the externally anchored pressure scale. The remaining gap between the constrained ($R^2 \approx 0.41$) and boundary-constrained ($R^2 \approx 0.74$) fits is the substantive identification limit of the one-timescale pressure block. Closing this gap would require either a dataset with both spread data and directly observed toxicity labels, or a multi-timescale $\tau$ model.
 
+The empirical picture the calibration establishes is: the spread side is tightly identified (bootstrap 95\% CI on $\alpha_{\mathrm{crit}}$ spans $[0.313,\,0.320]$), but the toxicity block is constrained only along the ratio $\phi/\psi \approx 1.46$. The individual values of $\phi$ and $\psi$ require an independent text toxicity measurement, or an independent same platform toxicity measurement, to pin down separately.
+
+We also checked whether the spread-side conclusions are sensitive to the exact calibration window and time discretization. Re-fitting the reduced IVF model on 80, 100, and 120 hour windows with the original 1 hour discretization leaves the main qualitative conclusions intact: the dominant spike is still well fit and the inferred spread parameters remain in the same general range. A harsher stress test with 2 hour binning performs much worse, which is informative rather than alarming. The model was formulated and calibrated at the 1 hour event scale, so coarse aggregation compresses the spike shape and weakens fit quality. This matters because it shows the main spread conclusion is robust to nearby window choices at the native time scale, while also clarifying the temporal resolution at which the calibration should be interpreted.
 
 % ============================================================
 %  8. NUMERICAL RESULTS
@@ -799,7 +814,7 @@ Figure~\ref{fig:results} shows the results of a continuation sweep over $\alpha 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_results.png}
-\caption{Policy scenarios and continuation results. The panels show equilibrium viral volume, discussion pressure, user retention, and engagement as functions of the amplification parameter $\alpha$. The vertical dashed line marks $\alpha_{\mathrm{crit}} \approx 0.3165$.}
+\caption{Main policy evidence from the IVFS model. The top row shows time trajectories for viral volume, latent toxicity, and retained users under the health-first, moderate, and engagement-first scenarios; the bottom row shows how equilibrium toxicity, retained users, and engagement change as amplification $\alpha$ varies continuously. The dashed threshold line at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the shaded subcritical region make the central tradeoff visually obvious: stronger amplification raises sustained virality and toxicity while reducing the long-run user base.}
 \label{fig:results}
 \end{figure}
 
@@ -812,7 +827,7 @@ Figure~\ref{fig:phisens} shows the results. Across the entire tested range of $\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/phi_sensitivity.png}
-\caption{Sensitivity of equilibrium pressure and user retention to the pressure forcing parameter $\phi$, with $\psi = 0.1$ fixed. Dashed and dotted lines mark the baseline and external-reference values.}
+\caption{Robustness of the policy ordering to the toxicity forcing parameter $\phi$ with $\psi=0.1$ fixed. The left panel tracks equilibrium toxicity and the right panel tracks equilibrium users across a range of $\phi$ values, with vertical markers for the baseline and external-reference scales. The qualitative ranking of the three policies does not change, which matters because the pressure block is only partially identified and the main policy conclusion should not depend on one single choice of $\phi$.}
 \label{fig:phisens}
 \end{figure}
 
@@ -843,10 +858,11 @@ The local $R^2$ values range from $0.69$ to $0.95$, which shows that the burst-a
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/higgs_window_validation.png}
-\caption{Representative 48-hour active-window fits. The IVF helper model captures the local burst-and-decay shape across multiple phases of the Higgs cascade.}
+\caption{Representative 48-hour active-window refits drawn from different phases of the Higgs cascade. Each panel shows observed retweet counts and the locally fitted IVF curve for one active window. The takeaway is not that the parameters are identical across windows, they are not, but that the same burst-and-decay mechanism continues to fit the event at its native one-hour scale, which strengthens the empirical case that the main calibration is not a one-window accident.}
 \label{fig:windowval}
 \end{figure}
 
+The policy story emerging from these results is consistent across all tested pressure calibrations: any platform operating above $\alpha_{\mathrm{crit}}$ faces a structural tradeoff in which amplification gains in viral engagement are paired with rising toxicity and accelerating user departure. The ordering, higher $\alpha$ means higher $V^*$, higher $\tau^*$, and lower $U^*$, is not an artefact of a particular parameter choice; it follows from the model's feedback structure.
 
 % ============================================================
 %  9. LIMITATIONS
@@ -854,25 +870,19 @@ The local $R^2$ values range from $0.69$ to $0.95$, which shows that the burst-a
 \section{Limitations}
 \label{sec:limitations}
 
-The following limitations apply to the present model and analysis, listed roughly in order of consequence.
+\paragraph{Identification limitations.}
+The pressure parameters $(\phi, \psi)$ are not jointly identified from the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially: it anchors $\phi/\psi$ to the Jigsaw external reference but cannot determine the individual values. The boundary-constrained fit (Table~\ref{tab:tauconfigs}) reaches the upper bound $\psi = 1.0$ imposed during optimization; the true optimum may lie at $\psi > 1$, and relaxing this bound is a natural next step once independent pressure measurements are available.
 
-\begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Partial identification of the pressure block.} The pressure parameters $(\phi, \psi)$ are not uniquely determined by the available data. The spread block is well-identified (bootstrap CIs are narrow, profile likelihood shows clear minima), but the pressure block relies on a reply proxy that does not separately pin down the forcing and relaxation timescales. The reference-constrained calibration resolves this partially but not completely. Moreover, the boundary-constrained fit (Table~\ref{tab:tauconfigs}) reaches the upper bound $\psi = 1.0$ imposed during optimization; the true unconstrained optimum may lie at $\psi > 1$, and relaxing this bound is a natural next step once independent pressure data become available.
+\paragraph{Data limitations.}
+The spread model is fitted on a single event cascade (Higgs boson announcement, July 2012). The multi-window validation (Section~\ref{sec:windowval}) confirms that the IVF burst-and-decay shape generalises across phases of this event, but the parameter values are specific to this cascade and this platform. Calibration on independent events from different topics, time periods, and platforms is needed to assess whether the threshold value and spread rates carry over.
 
-    \item \textbf{Single-event spread calibration.} The spread model is fitted to one main event window from the Higgs dataset. While the multi-window validation (Table~\ref{tab:windowval}) shows that the model shape is robust, the parameter values are specific to this particular cascade. Calibration on additional independent events would strengthen the empirical foundation.
+\paragraph{Modelling limitations.}
+Three structural simplifications bound the model's scope. First, homogeneous mixing: all content items in a compartment interact identically, ignoring network topology, community structure, and content heterogeneity. Second, deterministic dynamics: the model cannot capture stochastic fluctuations or rare-event behaviour inherent in individual sharing decisions. Third, scalar pressure: the latent state $\tau$ collapses the multidimensional nature of online toxicity (hate speech, harassment, misinformation) into a single index; a richer model might track multiple pressure types separately.
 
-    \item \textbf{Operational definition scope.} The rage-bait definition used here is operationalized through the $\tau/V$ ratio (Section~\ref{sec:ragebait-def}). While this captures the structural signature of high-arousal content, it does not require, or use, direct text-level toxicity labels. Future work should validate the operational definition against datasets with ground-truth toxicity annotations (e.g.\ Jigsaw, Ruddit) to confirm that it generalizes beyond engagement-proxy data.
+\paragraph{External validity limitations.}
+The rage-bait operational definition (high $\tau/V$ ratio, Section~\ref{sec:ragebait-def}) is validated here only against the structural signature present in a scientific announcement cascade, not against ground-truth toxicity annotations. Future work should test whether the structural signature coincides with content independently labelled as inflammatory (e.g.\ using Jigsaw or Ruddit labels). Similarly, the DFE-based $\mathcal{R}_0$ derivation uses linearization of the $\dot{V}$ equation; a full next-generation matrix treatment would confirm the result and clarify the roles of individual model components.
 
-    \item \textbf{Homogeneous mixing.} The model assumes that all content items in a compartment interact identically, ignoring network structure, community effects, and content heterogeneity. Real social media platforms exhibit strong community structure and heterogeneous spreading dynamics.
-
-    \item \textbf{Deterministic dynamics.} The model is purely deterministic, which means it cannot capture stochastic fluctuations, rare events, or the inherent randomness of individual-level sharing decisions. This is a standard limitation of ODE-based compartmental models.
-
-    \item \textbf{Scalar pressure.} The latent pressure $\tau$ is a single scalar, which collapses the multidimensional nature of online toxicity (hate speech, harassment, misinformation, etc.) into a single index. A richer model might use multiple pressure variables for different types of harmful discussion.
-
-    \item \textbf{DFE-based $\mathcal{R}_0$.} The basic reproduction number is derived from linearization at the DFE. A full next-generation matrix derivation would strengthen this result and clarify the roles of the different model components.
-\end{enumerate}
-
-These are real limitations, but the main qualitative conclusions still hold. The finding that increased amplification raises pressure and lowers retention is robust across pressure configurations (Section~\ref{sec:sensitivity}), and the threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$ is tightly estimated.
+Despite these limitations, the model robustly supports the existence of a sharp amplification threshold and a monotone amplification retention tradeoff. What it cannot yet establish is whether the specific threshold value $\alpha_{\mathrm{crit}} \approx 0.3165$ or the magnitude of the retention loss generalise across platforms, content types, or event scales.
 
 
 % ============================================================
@@ -905,12 +915,16 @@ We have developed and analyzed a deterministic compartmental ODE model for conte
 
     \item \textbf{Robust policy ranking.} Across all tested pressure configurations, the qualitative ordering is preserved: higher amplification increases viral volume and discussion pressure while lowering user retention.
 
-    \item \textbf{Honest pressure identification.} The pressure block is partially identified through a combination of same-dataset reply proxy and external toxicity reference. The reference-constrained calibration provides the best available estimate ($R^2 \approx 0.41$), but a gap remains relative to the boundary-constrained optimum ($R^2 \approx 0.74$, where the optimizer reached the upper bound on $\psi$).
+    \item \textbf{Pressure identification.} The pressure block is partially identified through a combination of same-dataset reply proxy and external toxicity reference. The reference-constrained calibration provides the best available estimate ($R^2 \approx 0.41$), but a gap remains relative to the boundary-constrained optimum ($R^2 \approx 0.74$, where the optimizer reached the upper bound on $\psi$).
 \end{enumerate}
 
 \subsection{Significance}
 
-The main idea in this project is the content-centric modelling perspective. By compartmentalizing content lifecycle states rather than user behavioural states, we obtain a model that operates at the level where platform data and platform policy decisions are most naturally expressed. The model shows that a six-state ODE system, calibrated on one real event cascade, can capture the amplification-health tradeoff and produce a quantitative threshold for self-sustaining virality.
+The central result is that a sharp amplification threshold ($\alpha_{\mathrm{crit}} \approx 0.3165$) governs whether virality and discussion pressure self-sustain. Below it, both collapse to zero and the platform retains its full user base. Above it, the system locks into a feedback cycle whose equilibrium viral volume, pressure level, and user attrition all increase monotonically with how aggressively the platform amplifies.
+
+The distinctive feature of this result is that it follows from a \emph{content centric} model. Prior compartmental work on social media dynamics almost uniformly classifies users into behavioural states, susceptible, infected, recovered, and variants thereof. This requires knowledge of individual user exposure histories that are rarely available in public data, and it places the policy variable (amplification) as an implicit modifier of user to user transmission rates. By instead classifying content items into lifecycle stages, the IVFS state variables correspond directly to quantities platforms observe and control: content volume in each visibility tier, reply rate as a toxicity signal, and active user count. The amplification parameter $\alpha$ is a platform control variable, not a latent individual trait.
+
+This alignment between model state and platform observables makes the threshold analysis directly actionable. Determining whether $\alpha$ clears $\alpha_{\mathrm{crit}}$ requires only content level event counts, not inferred user state data. A six state ODE calibrated on a single real world cascade is sufficient to produce a quantitative threshold and a policy scenario comparison with interpretable equilibrium values, a finding that would not emerge from a user centric model of the same cascade.
 
 \subsection{Next steps}
 \label{sec:nextsteps}
@@ -944,12 +958,12 @@ Some directions for future work:
 
 All code used in this project is available in the repository. The main scripts are:
 \begin{verbatim}
-python code/ivfs_validation.py
-python code/equilibrium_analysis.py
-python code/benchmark_models.py
-python code/toxicity_calibration.py
+python -m code.ivfs_validation --offline
+python -m code.equilibrium_analysis --offline
+python -m code.benchmark_models --offline
+python -m code.toxicity_calibration
 \end{verbatim}
-The main outputs (figures and diagnostics) are written to the \texttt{assets/} directory. The Python environment is specified in \texttt{requirements.txt}.
+The main outputs (figures, diagnostics, and run metadata) are written to the \texttt{assets/} directory. The Python environment is specified in \texttt{requirements.txt}. The Higgs dataset is expected locally, with optional external toxicity files supplied separately by the user.
 
 \section{Identification note for the pressure block}
 \label{app:ident}

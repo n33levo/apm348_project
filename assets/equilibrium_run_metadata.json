@@ -1,0 +1,53 @@
+{
+  "dataset": {
+    "bytes": 14702029,
+    "checksum_matches_expected": true,
+    "exists": true,
+    "path": "/Users/neelmac1/Documents/hw/project/project/data/higgs-activity_time.txt",
+    "sha256": "6487c03bb5f0f966447a7a7410c5ba124f7ddf1b3d7ff9c3a94d20891214225b"
+  },
+  "git_commit": "0af31ad78631c78abeca3db28828103972586fb8",
+  "notes": {},
+  "outputs": {
+    "rows": [
+      {
+        "alpha": 0.2,
+        "dfe_max_real_part": -0.01,
+        "has_positive_equilibrium": false,
+        "r0": 0.6311834167700211
+      },
+      {
+        "U_star": 35.99750716650229,
+        "V_star": 0.06946161958586072,
+        "alpha": 0.5,
+        "dfe_max_real_part": 0.179500082726623,
+        "has_positive_equilibrium": true,
+        "positive_eq_max_real_part": -0.01,
+        "r0": 1.5779585419250526,
+        "tau_star": 0.038898506968082
+      },
+      {
+        "U_star": 29.89650322808626,
+        "V_star": 0.12007792718946475,
+        "alpha": 0.9,
+        "dfe_max_real_part": 0.5715609912773381,
+        "has_positive_equilibrium": true,
+        "positive_eq_max_real_part": -0.01,
+        "r0": 2.840325375465095,
+        "tau_star": 0.06724363922610026
+      }
+    ]
+  },
+  "parameters": {
+    "alphas": [
+      0.2,
+      0.5,
+      0.9
+    ],
+    "beta0": 0.9997553168043234,
+    "gamma0": 0.3005760529617708
+  },
+  "script": "equilibrium_analysis",
+  "solver": {},
+  "timestamp_utc": "2026-03-29T09:42:20+00:00"
+}

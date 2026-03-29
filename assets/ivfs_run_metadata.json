@@ -1,0 +1,141 @@
+{
+  "dataset": {
+    "bytes": 14702029,
+    "checksum_matches_expected": true,
+    "exists": true,
+    "path": "/Users/neelmac1/Documents/hw/project/project/data/higgs-activity_time.txt",
+    "sha256": "6487c03bb5f0f966447a7a7410c5ba124f7ddf1b3d7ff9c3a94d20891214225b"
+  },
+  "git_commit": "0af31ad78631c78abeca3db28828103972586fb8",
+  "notes": {
+    "nonnegativity_guard": "State variables are clamped to zero in the RHS near the boundary as a numerical safeguard.",
+    "tau_definition": "Toxicity is the latent rage-bait toxicity state tau, not a direct text label."
+  },
+  "outputs": {
+    "bootstrap_ci": {
+      "alpha_r0": [
+        0.3129934317552001,
+        0.3205625679244234
+      ],
+      "beta0": [
+        0.9978010691842794,
+        1.0015439966765094
+      ],
+      "gamma0": [
+        0.2963826854203366,
+        0.3046095016107469
+      ]
+    },
+    "external_tau_source": null,
+    "figures": {
+      "calibration": "/Users/neelmac1/Documents/hw/project/project/assets/apm348_calibration_diagnostics.png",
+      "phi_sensitivity": "/Users/neelmac1/Documents/hw/project/project/assets/phi_sensitivity.png",
+      "policy": "/Users/neelmac1/Documents/hw/project/project/assets/apm348_results.png",
+      "profile": "/Users/neelmac1/Documents/hw/project/project/assets/profile_likelihood.png",
+      "tau_comparison": "/Users/neelmac1/Documents/hw/project/project/assets/tau_proxy_comparison.png"
+    },
+    "fit": {
+      "alpha_r0": 0.3168651055876399,
+      "beta0": 0.9997553168043234,
+      "gamma0": 0.3005760529617708,
+      "lambda0": 0.19999581068864974,
+      "lambda_decay": 0.04449832387290374,
+      "r2_fit_window": 0.9246730301562853,
+      "r2_full_window": 0.9246730301562853,
+      "r2_spike_window": 0.8890817646931829,
+      "tail_mean_bias": 0.0041023990897366735,
+      "v0": 1.0000000000000485e-05,
+      "weighted_loss": 0.0022862918563229724
+    },
+    "fit_band": {
+      "lower_first10": [
+        6.914285303027858e-06,
+        1.5142522816367994e-05,
+        3.9575932191426914e-05,
+        0.0001223702776105034,
+        0.000443274923456742,
+        0.0018646891438996816,
+        0.008984192583229229,
+        0.047915912942821236,
+        0.24470641008561336,
+        0.7459602212179921
+      ],
+      "upper_first10": [
+        6.972144231787468e-06,
+        1.521402131254592e-05,
+        3.9840816859715704e-05,
+        0.00012379996120390042,
+        0.00045134895820222125,
+        0.0019106226266148703,
+        0.009263572915589878,
+        0.049670392849313384,
+        0.2532306429436172,
+        0.7575630770675088
+      ]
+    },
+    "robustness_checks": [
+      {
+        "beta0": 1.0813510910455788,
+        "bin_hours": 1,
+        "gamma0": 0.30018296155389457,
+        "loss": 0.0023779251579094506,
+        "r2": 0.9131178810491061,
+        "window_hours": 80
+      },
+      {
+        "beta0": 2.1268445709801442,
+        "bin_hours": 2,
+        "gamma0": 0.4448677100068901,
+        "loss": 0.16599476241903796,
+        "r2": -1.9031732124451088,
+        "window_hours": 80
+      },
+      {
+        "beta0": 0.9997553168043234,
+        "bin_hours": 1,
+        "gamma0": 0.3005760529617708,
+        "loss": 0.0022862918563229724,
+        "r2": 0.9246730301562853,
+        "window_hours": 100
+      },
+      {
+        "beta0": 1.4514347891182633,
+        "bin_hours": 2,
+        "gamma0": 0.9999994733032311,
+        "loss": 0.17860232611514956,
+        "r2": -1.5827794140226206,
+        "window_hours": 100
+      },
+      {
+        "beta0": 2.796637588590468,
+        "bin_hours": 1,
+        "gamma0": 0.9975118613587475,
+        "loss": 0.12284048441693944,
+        "r2": -1.0572383249074693,
+        "window_hours": 120
+      },
+      {
+        "beta0": 1.4514347891182633,
+        "bin_hours": 2,
+        "gamma0": 0.9999994733032311,
+        "loss": 0.17860232611514956,
+        "r2": -1.5827794140226206,
+        "window_hours": 120
+      }
+    ],
+    "tau_proxy_configs": [
+      "current",
+      "higgs_decay",
+      "higgs_unconstrained"
+    ]
+  },
+  "parameters": {
+    "bootstrap_replicates": 500,
+    "fit_window_hours": 100,
+    "phi": 0.056,
+    "psi": 0.1
+  },
+  "script": "ivfs_validation",
+  "solver": {},
+  "timestamp_utc": "2026-03-29T09:30:37+00:00"
+}
