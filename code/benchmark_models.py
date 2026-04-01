@@ -2,18 +2,19 @@ from __future__ import annotations
 
 """Fit SIR to the same Higgs data and compare it to our IVF model"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 import numpy as np
-from scipy.integrate import odeint
 from scipy.optimize import minimize
 
-from common import ASSETS_DIR, HIGGS_TXT
-from ivfs_validation import (FIT_WINDOW_HOURS, SCENARIO_DISPLAY_HOURS, SPIKE_WINDOW_HOURS, build_hourly_curve,
-                             ensure_dataset, fit_basic_ivf, parse_activity_file, run_scenarios)
+from .common import ASSETS_DIR, add_dataset_cli_arguments, solve_trajectory
+from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
+from .ivfs_config import (FIT_WINDOW_HOURS,
+                          SCENARIO_DISPLAY_HOURS, SOLVER_ATOL, SOLVER_MAX_STEP,
+                          SOLVER_METHOD, SOLVER_RTOL, SPIKE_WINDOW_HOURS)
+from .ivfs_dynamics import run_scenarios
+from .plot_style import (FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR, OBSERVED_MARKER_SIZE,
+                         REFERENCE_COLOR, SCENARIO_COLORS, SMOOTH_COLOR, SUPTITLE_FONT_SIZE,
+                         add_metric_box, add_shared_legend, add_top_padding, apply_plot_style,
+                         finish_axes)
 
 import matplotlib
 
@@ -22,9 +23,10 @@ import matplotlib.pyplot as plt
 
 
 FIGURE_PATH = ASSETS_DIR / 'benchmark_curve_compare.png'
+BENCHMARK_SCENARIO_XMAX = 100
 
 
-def sir_ode(y, t, beta, gamma):
+def sir_ode(t, y, beta, gamma):
     s_val, i_val, r_val = y
     ds = -beta * s_val * i_val
     di = beta * s_val * i_val - gamma * i_val
@@ -35,7 +37,16 @@ def sir_ode(y, t, beta, gamma):
 def simulate_basic_sir(beta: float, gamma: float, i0_fit: float, n_steps: int) -> np.ndarray:
     t_data = np.arange(n_steps, dtype=float)
     i0_fit = float(np.clip(i0_fit, 1e-5, 0.1))
-    sol = odeint(sir_ode, [1.0 - i0_fit, i0_fit, 0.0], t_data, args=(beta, gamma), mxstep=10000)
+    sol = solve_trajectory(
+        sir_ode,
+        [1.0 - i0_fit, i0_fit, 0.0],
+        t_data,
+        args=(beta, gamma),
+        method=SOLVER_METHOD,
+        rtol=SOLVER_RTOL,
+        atol=SOLVER_ATOL,
+        max_step=SOLVER_MAX_STEP,
+    )
     i_fit = sol[:, 1]
     return i_fit / (np.max(i_fit) + 1e-12)
 
@@ -55,7 +66,16 @@ def fit_basic_sir(v_empirical_norm: np.ndarray,
         i0 = np.clip(i0, 1e-5, 0.1)
         if beta < 1e-4 or gamma < 1e-4:
             return 1e9
-        sol = odeint(sir_ode, [1.0 - i0, i0, 0.0], t_data, args=(beta, gamma), mxstep=10000)
+        sol = solve_trajectory(
+            sir_ode,
+            [1.0 - i0, i0, 0.0],
+            t_data,
+            args=(beta, gamma),
+            method=SOLVER_METHOD,
+            rtol=SOLVER_RTOL,
+            atol=SOLVER_ATOL,
+            max_step=SOLVER_MAX_STEP,
+        )
         i_sim = sol[:, 1]
         imax = float(np.max(i_sim))
         if imax <= 1e-12:
@@ -91,10 +111,9 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
               fit_window_hours: int,
               ivf_r2: float, sir_r2: float,
               t_scenario, scenario_results) -> None:
-    plt.style.use('ggplot')
+    apply_plot_style()
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
-    # Panel 1 -- comparing both fits on the primary calibration window
     x = np.arange(len(empirical_norm))
     smooth = np.convolve(empirical_norm, np.ones(3) / 3.0, mode='same')
     corr = float(np.corrcoef(ivf_fit, sir_fit)[0, 1])
@@ -122,19 +141,17 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
         'Health-First (alpha=0.2)': '#2E7D32',
     }
 
-    # Panel 2 -- discussion pressure, SIR can't capture this
     for label, data in scenario_results.items():
         axs[1].plot(t_scenario, data['solution'][:, 4], linewidth=2.0,
                     color=colors[label], label=label)
     axs[1].axhline(0, color='gray', linewidth=0.8, linestyle=':')
     axs[1].set_title('(b) Discussion Pressure τ(t) (IVFS only)')
     axs[1].set_xlabel('Time')
-    axs[1].set_ylabel('Aggregate discussion pressure \u03C4')
+    axs[1].set_ylabel('Aggregate discussion pressure τ')
     axs[1].set_xlim(0, SCENARIO_DISPLAY_HOURS)
     axs[1].set_ylim(bottom=0)
     axs[1].legend(fontsize=8)
 
-    # Panel 3 -- user retention, also not captured by SIR
     for label, data in scenario_results.items():
         axs[2].plot(t_scenario, data['solution'][:, 5], linewidth=2.0,
                     color=colors[label], label=label)
@@ -150,9 +167,9 @@ def make_plot(empirical_norm: np.ndarray, ivf_fit: np.ndarray, sir_fit: np.ndarr
     plt.close(fig)
 
 
-def main() -> None:
-    ensure_dataset()
-    rt_timestamps, *_ = parse_activity_file(HIGGS_TXT)
+def main(dataset_path=None) -> None:
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
+    rt_timestamps, *_ = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps)
     window_counts = cal['rt_window']
     empirical_norm = window_counts / np.max(window_counts)
@@ -199,4 +216,9 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Benchmark the reduced IVF fit against SIR on the Higgs cascade.')
+    add_dataset_cli_arguments(parser)
+    args = parser.parse_args()
+    main(dataset_path=args.dataset_path)

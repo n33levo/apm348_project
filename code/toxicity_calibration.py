@@ -3,14 +3,14 @@ from __future__ import annotations
 """Check if we have an external toxicity dataset and print a reference summary"""
 
 import csv
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
 
-from common import TOXICITY_DIR, ensure_layout
+from .common import TOXICITY_DIR, ensure_layout
+from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
+from .ivfs_config import FIT_WINDOW_HOURS, PHI, PSI
+from .ivfs_dynamics import run_scenarios
 
 JIGSAW_COLUMNS = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 RUDDIT_COLUMN = 'offensiveness_score'
@@ -97,8 +97,8 @@ def summarize_ruddit(path: Path) -> dict[str, float]:
 def main() -> None:
     files = candidate_files()
     if not files:
-        print('no toxicity dataset found')
-        print(f'drop a jigsaw or ruddit csv into {TOXICITY_DIR} if you want to run this')
+        print('no external toxicity dataset found')
+        print(f'place a jigsaw or ruddit csv in {TOXICITY_DIR} if you want to run this')
         return
 
     selected = files[0]
@@ -113,14 +113,11 @@ def main() -> None:
         summary = summarize_jigsaw(selected)
         for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
-        # use Jigsaw only as an external reference for the tau-side scale
         mean_tau = summary['toxic_any_rate']
         print(f'\n  external tau reference (mean toxicity rate): {mean_tau:.6f}')
         try:
-            from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, PHI, PSI, build_hourly_curve, ensure_dataset,
-                                          fit_basic_ivf, parse_activity_file, run_scenarios)
-            ensure_dataset()
-            rt, *_ = parse_activity_file(HIGGS_TXT)
+            resolved_dataset = ensure_dataset()
+            rt, *_ = parse_activity_file(resolved_dataset)
             cal = build_hourly_curve(rt)
             wc = cal['rt_window']
             en = wc / np.max(wc)
@@ -137,7 +134,8 @@ def main() -> None:
             print(f'  (could not run IVFS model: {exc})')
     elif RUDDIT_COLUMN in header_set:
         print('Schema: Ruddit-style offensiveness scores')
-        for key, value in summarize_ruddit(selected).items():
+        summary = summarize_ruddit(selected)
+        for key, value in summary.items():
             print(f'  {key}: {value:.6f}')
     else:
         print('Schema not recognized.')

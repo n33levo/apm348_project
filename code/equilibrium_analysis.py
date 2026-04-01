@@ -2,18 +2,12 @@ from __future__ import annotations
 
 """Equilibrium and stability analysis for the IVFS model"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 import numpy as np
 from numpy.linalg import eigvals
 from scipy.optimize import root_scalar
 
-from ivfs_validation import (FIT_WINDOW_HOURS, HIGGS_TXT, build_hourly_curve, ensure_dataset, fit_basic_ivf,
-                              parse_activity_file,
-                              KAPPA, ETA, PHI, PSI, RHO, LAMBDA_U, NU, MU_C, DELTA, W)
+from .ivfs_calibration import build_hourly_curve, ensure_dataset, fit_basic_ivf, parse_activity_file
+from .ivfs_config import DELTA, ETA, FIT_WINDOW_HOURS, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO, W
 
 A_LOSS = DELTA + MU_C
 
@@ -93,9 +87,9 @@ def jacobian(state: np.ndarray, alpha: float, beta0: float, gamma0: float) -> np
     return jac
 
 
-def main() -> None:
-    ensure_dataset()
-    rt_timestamps, *_ = parse_activity_file(HIGGS_TXT)
+def main(dataset_path=None) -> None:
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
+    rt_timestamps, *_ = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps)
     window_counts = cal['rt_window']
     empirical_norm = window_counts / np.max(window_counts)
@@ -109,6 +103,7 @@ def main() -> None:
     print(f'Calibrated beta0={beta0:.6f}, gamma0={gamma0:.6f}')
     print()
 
+    summary_rows: list[dict[str, float | bool]] = []
     for alpha in (0.2, 0.5, 0.9):
         i_dfe, u_dfe, r0 = dfe(alpha, beta0, gamma0)
         dfe_state = np.array([i_dfe, 0.0, 0.0, 0.0, 0.0, u_dfe], dtype=float)
@@ -120,12 +115,28 @@ def main() -> None:
         print(f'  max Re(lambda) at DFE = {dfe_max:.6f}')
         if eq_state is None:
             print('  no positive equilibrium found')
+            summary_rows.append({'alpha': alpha, 'r0': r0, 'dfe_max_real_part': dfe_max, 'has_positive_equilibrium': False})
         else:
             eq_max = float(np.max(eigvals(jacobian(eq_state, alpha, beta0, gamma0)).real))
             print(f'  tau*={eq_state[4]:.6f}, V*={eq_state[1]:.6f}, U*={eq_state[5]:.6f}')
             print(f'  max Re(lambda) at positive equilibrium = {eq_max:.6f}')
+            summary_rows.append({
+                'alpha': alpha,
+                'r0': r0,
+                'dfe_max_real_part': dfe_max,
+                'has_positive_equilibrium': True,
+                'tau_star': float(eq_state[4]),
+                'V_star': float(eq_state[1]),
+                'U_star': float(eq_state[5]),
+                'positive_eq_max_real_part': eq_max,
+            })
         print()
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Run equilibrium and stability checks for the IVFS model.')
+    parser.add_argument('--dataset-path', type=str, default=None)
+    args = parser.parse_args()
+    main(dataset_path=args.dataset_path)

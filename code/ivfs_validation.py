@@ -2,26 +2,30 @@ from __future__ import annotations
 
 """Main script -- run this and it does the whole calibration + scenarios + figures"""
 
+import argparse
+
 import numpy as np
 
-from ivfs_calibration import (FIT_WINDOW_HOURS, HIGGS_TXT, build_hourly_curve, bootstrap_calibration, ensure_dataset,
-                              fit_basic_ivf, fit_tau_proxy, moving_average, parse_activity_file, profile_likelihood,
-                              simulate_basic_ivf, simulate_tau_from_v, tau_fit_metrics)
-from ivfs_config import (DELTA, DIAG_FIGURE_PATH, DISPLAY_WINDOW_HOURS, ETA, FIGURE_PATH, HIGGS_GZ, HIGGS_URL, IVF_PARAM_BOUNDS,
-                         KAPPA, LAMBDA_U, MU_C, NU, PHI, PHI_SENS_FIGURE_PATH, PROFILE_FIGURE_PATH, PSI, RHO,
-                         SCENARIO_ALPHAS, SCENARIO_DISPLAY_HOURS, SMOOTH_WINDOW, SPIKE_WINDOW_HOURS, TAIL_START_HOURS,
-                         TAU_COMPARE_FIGURE_PATH, TAU_PARAM_BOUNDS, W)
-from ivfs_dynamics import (_ivfs_rhs, build_tau_configurations, find_W_for_interior_Emax, full_ivfs_ode,
-                           run_continuation, run_phi_sensitivity, run_scenarios, run_sensitivity)
-from ivfs_figures import (make_calibration_figure, make_phi_sensitivity_figure, make_results_figure,
-                          make_tau_comparison_figure, plot_profile)
+from .common import add_dataset_cli_arguments
+from .ivfs_calibration import (FIT_WINDOW_HOURS, bootstrap_calibration, bootstrap_curve_band,
+                               build_hourly_curve, ensure_dataset, fit_basic_ivf,
+                               parse_activity_file, profile_likelihood)
+from .ivfs_config import (DELTA, DIAG_FIGURE_PATH, FIGURE_PATH, LAMBDA_U, MU_C,
+                          NU, PHI, PHI_SENS_FIGURE_PATH, PROFILE_FIGURE_PATH, PSI, RHO,
+                          ROBUST_BIN_HOURS, ROBUST_WINDOW_HOURS, SPIKE_WINDOW_HOURS,
+                          TAIL_START_HOURS, TAU_COMPARE_FIGURE_PATH)
+from .ivfs_dynamics import (build_tau_configurations, find_W_for_interior_Emax, run_continuation,
+                            run_phi_sensitivity, run_scenarios, run_sensitivity)
+from .ivfs_figures import (make_calibration_figure, make_phi_sensitivity_figure, make_results_figure,
+                           make_tau_comparison_figure, plot_profile)
 
 
-def main() -> None:
+def main(dataset_path: str | None = None,
+        ) -> None:
     print('Running calibration + scenarios + figures')
 
-    ensure_dataset()
-    rt_timestamps, re_timestamps, mt_timestamps, total_rows = parse_activity_file(HIGGS_TXT)
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
+    rt_timestamps, re_timestamps, mt_timestamps, total_rows = parse_activity_file(resolved_dataset)
     cal = build_hourly_curve(rt_timestamps, re_timestamps, mt_timestamps)
     window_counts = cal['rt_window']
     re_window = cal.get('re_window')
@@ -41,6 +45,12 @@ def main() -> None:
         fit_target,
         fit_counts,
         n_steps=len(empirical_norm),
+    )
+    fit_band_low, fit_band_high = bootstrap_curve_band(
+        fit_target,
+        fit_counts,
+        n_steps=len(empirical_norm),
+        B=120,
     )
 
     fit_sse = float(np.sum((fitted_norm[:fit_window_hours] - empirical_norm[:fit_window_hours]) ** 2))
@@ -65,7 +75,7 @@ def main() -> None:
     external_tau_ref = None
     external_source = None
     try:
-        from toxicity_calibration import get_external_tau_reference
+        from .toxicity_calibration import get_external_tau_reference
         ext_ref = get_external_tau_reference()
         if ext_ref is not None:
             external_tau_ref = float(ext_ref['tau_reference'])
@@ -125,7 +135,8 @@ def main() -> None:
                             re_proxy, ratio_proxy,
                             selected_proxy, selected_proxy_name,
                             fit_window_hours,
-                            weighted_loss, r2_fit, r2_full, r2_spike, tail_bias)
+                            weighted_loss, r2_fit, r2_full, r2_spike, tail_bias,
+                            fit_band=(fit_band_low, fit_band_high))
     if tau_configs and selected_proxy is not None:
         make_tau_comparison_figure(selected_proxy, selected_proxy_name, re_window, tau_configs)
     make_results_figure(t_scenario, scenario_results,
@@ -257,6 +268,45 @@ def main() -> None:
     print(f"gamma0 95% CI: [{ci['gamma0'][0]:.4f}, {ci['gamma0'][1]:.4f}]")
     print(f"R0=1 threshold alpha 95% CI: [{ci['alpha_r0'][0]:.4f}, {ci['alpha_r0'][1]:.4f}]")
 
+    robustness_rows = []
+    print()
+    print('Robustness checks across alternate windows and bin sizes:')
+    for window_hours in ROBUST_WINDOW_HOURS:
+        for bin_hours in ROBUST_BIN_HOURS:
+            robust_cal = build_hourly_curve(
+                rt_timestamps,
+                re_timestamps,
+                mt_timestamps,
+                window_hours=window_hours,
+                bin_hours=bin_hours,
+            )
+            robust_counts = np.asarray(robust_cal['rt_window'], dtype=float)
+            robust_norm = robust_counts / np.max(robust_counts)
+            robust_fit_hours = min(FIT_WINDOW_HOURS // bin_hours, len(robust_norm))
+            robust_beta, robust_gamma, _l0, _ld, _v0, robust_loss, robust_fit = fit_basic_ivf(
+                robust_norm[:robust_fit_hours],
+                robust_counts[:robust_fit_hours],
+                n_steps=len(robust_norm),
+            )
+            robust_sse = float(np.sum((robust_fit[:robust_fit_hours] - robust_norm[:robust_fit_hours]) ** 2))
+            robust_ss_tot = float(np.sum((robust_norm[:robust_fit_hours] - np.mean(robust_norm[:robust_fit_hours])) ** 2))
+            robust_r2 = 1.0 - robust_sse / robust_ss_tot if robust_ss_tot > 0 else 0.0
+            robustness_rows.append({
+                'window_hours': int(window_hours),
+                'bin_hours': int(bin_hours),
+                'beta0': float(robust_beta),
+                'gamma0': float(robust_gamma),
+                'loss': float(robust_loss),
+                'r2': float(robust_r2),
+            })
+            print(
+                f"  window={window_hours:>3}h, bin={bin_hours}h: "
+                f"beta0={robust_beta:.4f}, gamma0={robust_gamma:.4f}, R2={robust_r2:.4f}"
+            )
+
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Run the full IVFS calibration, robustness, and figure pipeline.')
+    add_dataset_cli_arguments(parser)
+    args = parser.parse_args()
+    main(dataset_path=args.dataset_path)

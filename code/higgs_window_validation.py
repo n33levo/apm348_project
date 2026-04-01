@@ -2,10 +2,7 @@ from __future__ import annotations
 
 """Fit the reduced IVF helper model on several additional active Higgs windows"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+import argparse
 
 import numpy as np
 
@@ -14,9 +11,11 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from common import ASSETS_DIR
-from ivfs_calibration import ensure_dataset, fit_basic_ivf, parse_activity_file
-from ivfs_config import HIGGS_TXT
+from .common import ASSETS_DIR, add_dataset_cli_arguments
+from .ivfs_calibration import ensure_dataset, fit_basic_ivf, parse_activity_file
+from .plot_style import (FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR, OBSERVED_MARKER_SIZE,
+                         SUPTITLE_FONT_SIZE, add_shared_legend, add_top_padding,
+                         apply_plot_style, finish_axes)
 
 WINDOW_WIDTH = 48
 WINDOW_STEP = 4
@@ -76,34 +75,40 @@ def select_windows(hourly_counts: np.ndarray) -> list[dict[str, float | int | np
 
 
 def make_figure(rows: list[dict[str, float | int | np.ndarray]]) -> None:
-    plt.style.use('ggplot')
-    fig, axs = plt.subplots(1, len(rows), figsize=(4.8 * len(rows), 4.2), sharey=True)
-    if len(rows) == 1:
+    apply_plot_style()
+    n = len(rows)
+    fig, axs = plt.subplots(1, n, figsize=(6.8 * n, 5.4))
+    if n == 1:
         axs = [axs]
     for ax, row in zip(axs, rows):
         empirical = np.asarray(row['empirical_norm'], dtype=float)
         fitted = np.asarray(row['fitted_norm'], dtype=float)
         t = np.arange(len(empirical))
-        ax.scatter(t, empirical, s=18, alpha=0.45, color='#616161', label='Empirical RT')
-        ax.plot(t, fitted, color='#C62828', linewidth=2.1, label='Fitted IVF')
+        ax.scatter(t, empirical, s=28, alpha=0.55, color=OBSERVED_COLOR, label='Observed retweets')
+        ax.plot(t, fitted, color=FIT_COLOR, linewidth=2.2, label='Fitted IVF curve')
         ax.set_title(
-            f"h {int(row['start'])}–{int(row['end'])}\n"
+            f"Hours {int(row['start'])} to {int(row['end'])}\n"
             f"peak={int(row['peak']):,}, $R^2$={float(row['r2']):.3f}",
-            fontsize=10,
+            fontsize=12, fontweight='normal',
         )
-        ax.set_xlabel('Hour in local window')
+        finish_axes(ax, 'Hours since local-window start', 'Normalized retweet volume')
         ax.set_ylim(bottom=0)
-    axs[0].set_ylabel('Normalized RT volume')
-    axs[0].legend(fontsize=8, loc='upper right')
-    fig.suptitle('Representative 48-hour Active-Window Fits for the Reduced IVF Model', fontsize=13, fontweight='bold', y=1.03)
-    fig.tight_layout(pad=1.6)
+        add_top_padding(ax, fraction=0.12, keep_bottom=0.0)
+        ax.margins(x=0.03)
+        ax.tick_params(axis='y', labelleft=True)
+    handles, labels = axs[0].get_legend_handles_labels()
+    add_shared_legend(fig, handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.0), ncol=2)
+    fig.suptitle('Alternate active windows show the same burst-and-decay shape',
+                 fontsize=13, fontweight='bold', y=0.98)
+    fig.subplots_adjust(left=0.07, right=0.99, bottom=0.22, top=0.86, wspace=0.22)
     fig.savefig(FIGURE_PATH, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
-def main() -> None:
-    ensure_dataset()
-    rt_timestamps, _re_timestamps, _mt_timestamps, total_rows = parse_activity_file(HIGGS_TXT)
+def main(dataset_path: str | None = None,
+        ) -> None:
+    resolved_dataset = ensure_dataset(dataset_path=dataset_path)
+    rt_timestamps, _re_timestamps, _mt_timestamps, total_rows = parse_activity_file(resolved_dataset)
     t0 = int(rt_timestamps.min())
     hours = (rt_timestamps - t0) / 3600.0
     max_hour = int(np.ceil(hours.max()))
@@ -126,4 +131,7 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Fit the reduced IVF model on alternate active Higgs windows.')
+    add_dataset_cli_arguments(parser)
+    args = parser.parse_args()
+    main(dataset_path=args.dataset_path)
