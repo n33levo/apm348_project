@@ -19,38 +19,28 @@
 \begin{document}
 
 % ============================================================
-%  TITLE PAGE
+%  TITLE, AUTHORS, ABSTRACT
 % ============================================================
-\begin{titlepage}
-\centering
-\vspace*{2cm}
+\begin{center}
+  {\LARGE\bfseries Content-Centric Modelling of Rage-Bait Lifecycles\\[0.3em]
+  on Social Media with Toxicity Feedback}\\[0.6em]
+  {\large An IVFS Compartmental ODE Model Calibrated on the Higgs Twitter Dataset}\\[0.8em]
+  {\normalsize Sohail (Neel) Sarkar \quad Piper Scott}\\[0.5em]
+  {\small APM348: Mathematical Modelling, Winter 2026 \quad University of Toronto}\\[0.15em]
+  {\small Instructor: Prof.\ Bernardo Galv\~{a}o-Sousa}\\[0.4em]
+  {\small March 2026}
+\end{center}
 
-{\Large\textsc{University of Toronto}}\\[0.5cm]
-{\large APM348: Mathematical Modelling, Winter 2026}\\[0.3cm]
-{\large Instructor: Prof.\ Bernardo Galv\~{a}o-Sousa}\\[2.5cm]
+\vspace{0.4em}
+\noindent\rule{\linewidth}{0.4pt}
+\vspace{-0.2em}
 
-{\LARGE\bfseries Content-Centric Modelling of Rage-Bait\\[0.3cm]
-Lifecycles on Social Media\\[0.3cm]
-with Toxicity Feedback}\\[1cm]
-
-{\large An IVFS Compartmental ODE Model\\
-Calibrated on the Higgs Twitter Dataset}\\[3cm]
-
-{\large
-Sohail (Neel) Sarkar\\[0.3cm]
-Piper Scott}\\[2.5cm]
-
-{\large March 2026}
-
-\vfill
-\end{titlepage}
-
-% ============================================================
-%  ABSTRACT AND TOC
-% ============================================================
 \begin{abstract}
+\noindent
 We develop a deterministic compartmental ordinary differential equation model for the lifecycle of rage bait content on social media. The model tracks four content states (ignored, viral, fatigued, and suppressed) together with a latent toxicity variable $\tau$ and an active user pool subject to toxicity dependent attrition. Throughout this report, toxicity means the toxicity of rage baiting: a reply driven, high arousal discussion pressure represented by $\tau$ and by the feedback loop it creates with viral spread and user loss. It is not a direct text classifier score. We calibrate the spread block on the SNAP Higgs Twitter retweet stream, use same dataset reply activity as the observable proxy for this toxicity, and compare its scale against an external Jigsaw text toxicity reference. The fitted model produces a clear amplification threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$, below which viral spread is not self sustaining. Above this threshold, stronger amplification raises long run viral volume and toxicity while lowering user retention. A core feature of the model is the toxicity feedback loop: viral content drives reply activity and latent toxicity, which amplifies further spread and accelerates user departure. Our main contribution is the content centric framing: unlike most existing compartmental models for social media dynamics, which classify users into behavioural states, we classify content items into lifecycle compartments and couple them to a toxicity state and user attrition. The principal limitation is that the toxicity block is proxy grounded rather than directly calibrated to same platform text toxicity, so the pressure parameters are only partially identified from the available data.
 \end{abstract}
+
+\noindent\rule{\linewidth}{0.4pt}
 
 \newpage
 \tableofcontents
@@ -88,9 +78,9 @@ The tradeoff is that we lose resolution on user heterogeneity and network topolo
 
 We use the SNAP Higgs Twitter dataset \cite{domenico2013} as our main data source: a record of approximately 563{,}000 social interactions captured during a 168-hour observation window centred on the July 2012 Higgs boson announcement. The dataset records three event types, namely retweets (RT), replies (RE), and mentions (MT), with Unix-epoch timestamps at one-second resolution. Figure~\ref{fig:higgs_overview} shows the hourly activity for each type. The dominant feature is a sharp retweet cascade in the first 24 hours, followed by a slower decay. Reply activity, which we later use as a proxy for discussion pressure, tracks the retweet peak with a slight lag. Mention activity is noisier and lower in volume.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{assets/higgs_overview.png}
+\includegraphics[width=0.72\textwidth]{assets/higgs_overview.png}
 \caption{Hourly retweet, reply, and mention counts in the SNAP Higgs Twitter dataset over the full 168-hour observation window. The retweet panel isolates the dominant burst used for spread calibration, while the reply panel tracks the same event with a high-arousal discussion signal that we use as the observable proxy for latent toxicity. The figure matters because it shows, directly from the raw data, why the project separates spread calibration from reply-driven toxicity calibration.}
 \label{fig:higgs_overview}
 \end{figure}
@@ -107,6 +97,7 @@ Throughout this report we return to one central question: how does algorithmic a
 % ============================================================
 %  2. PREVIOUS MATHEMATICAL MODELS
 % ============================================================
+\newpage
 \section{Previous mathematical models}
 \label{sec:previous}
 
@@ -138,7 +129,7 @@ Both of these models use direct text-based toxicity labels, which is an advantag
 
 Table~\ref{tab:lit} summarizes the key distinctions. Our IVFS model differs from the prior work in three respects: (i) it compartmentalizes content lifecycle states rather than user behavioural states, (ii) it explicitly couples content dynamics to a latent discussion-pressure variable and an active-user pool, and (iii) it is calibrated on a real event cascade (the Higgs dataset) rather than on simulated or aggregate data alone.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Comparison of compartmental modelling approaches for social media dynamics.}
 \label{tab:lit}
@@ -160,10 +151,13 @@ The main difference is the content centric perspective. Since we track content t
 
 
 % ============================================================
-%  3. MODELLING QUESTION
+%  3. MODELLING QUESTION AND APPROACH
 % ============================================================
-\section{Modelling question}
+\newpage
+\section{Modelling question and approach}
 \label{sec:question}
+
+\subsection{Modelling question}
 
 Our main question is:
 \begin{quote}
@@ -182,10 +176,7 @@ We investigate five subsidiary questions:
 These questions fit a compartmental ODE framework: they involve thresholds, equilibria, bifurcation, and sensitivity, all standard tools from the course. The lifecycle framing means we track content through its full trajectory on the platform, not just the initial viral spike.
 
 
-% ============================================================
-%  4. MODELLING APPROACH
-% ============================================================
-\section{Modelling approach}
+\subsection{Modelling approach}
 \label{sec:approach}
 
 We use a deterministic six-state compartmental ordinary differential equation (ODE) system. In the course's classification, this is a \emph{deterministic dynamical model}: the state evolves continuously in time according to a system of first-order ODEs, and there is no stochastic or probabilistic component.
@@ -206,6 +197,7 @@ This split means the spread calibration is clean and well-identified, while the 
 % ============================================================
 %  5. FORMULATION OF THE MODEL
 % ============================================================
+\newpage
 \section{Formulation of the model}
 \label{sec:formulation}
 
@@ -235,7 +227,7 @@ The four content compartments $(I, V, F, S)$ form a lifecycle: content is create
 
 Table~\ref{tab:params} lists all parameters in the model. We distinguish between \emph{calibrated parameters}, which are fitted to data, and \emph{scenario parameters}, which are fixed at values chosen to represent different policy configurations.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{IVFS model parameters.}
 \label{tab:params}
@@ -326,7 +318,7 @@ V \xrightarrow{\phi} \tau \xrightarrow{\kappa} \beta_{\mathrm{eff}} \xrightarrow
 \]
 Viral content drives pressure, pressure amplifies the effective spread rate, and the amplified spread rate produces more viral content. This positive feedback loop is counteracted by fatigue ($V \to F$), pressure relaxation ($\psi\tau$), and pressure-dependent user attrition ($\lambda_u w\tau U$), which reduces the content creation rate.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
     >=Stealth,
@@ -427,6 +419,7 @@ In the numerical implementation, the full IVFS trajectories and policy sweeps ar
 % ============================================================
 %  6. ANALYSIS OF THE MODEL
 % ============================================================
+\newpage
 \section{Analysis of the model}
 \label{sec:analysis}
 
@@ -506,7 +499,7 @@ The transition at $\mathcal{R}_0 = 1$ is consistent with a \emph{transcritical b
 
 Figure~\ref{fig:bifurcation} shows the bifurcation numerically. Panel~(a) plots $\mathcal{R}_0$ as a function of $\alpha$, with the threshold at $\mathcal{R}_0 = 1$ clearly marked. Panel~(b) shows the equilibrium viral volume $V^*$ obtained from the positive-equilibrium calculation for each value of~$\alpha$. The sharp onset at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the subsequent growth of $V^*$ illustrate the transcritical bifurcation.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/r0_bifurcation.png}
 \caption{Threshold evidence from the calibrated IVFS model. Panel~(a) plots the basic reproduction number $\mathcal{R}_0$ against amplification strength $\alpha$, and panel~(b) plots the numerically computed equilibrium viral volume $V^*$ over the same sweep. The sharp onset near $\alpha_{\mathrm{crit}} \approx 0.3165$ makes the transcritical threshold visually explicit, which matters because the platform-health tradeoff in later sections only appears once amplification crosses this critical level.}
@@ -553,7 +546,7 @@ In practice: $\mathcal{R}_0$ is directly proportional to both the amplification 
 
 For the long-run equilibrium quantities $V^*$, $\tau^*$, and $U^*$, we compute sensitivity indices numerically by perturbing each parameter by $\pm 1\%$ and measuring the proportional response. The numerical sensitivity table is reported in Table~\ref{tab:sens}.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Numerical sensitivity indices for equilibrium quantities at the moderate scenario ($\alpha = 0.5$). Each entry is $S(x,p)$ computed by central finite differences with $\pm 1\%$ perturbation.}
 \label{tab:sens}
@@ -585,7 +578,7 @@ The main takeaways are:
 
 Figure~\ref{fig:sensitivity_bars} visualizes these sensitivity indices as bar charts, making the dominance of the spread-side parameters $\gamma_0$, $\alpha$, and $\beta_0$ immediately apparent.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/sensitivity_bars.png}
 \caption{Normalized sensitivity indices for the equilibrium outputs $V^*$, $\tau^*$, and $U^*$ under the moderate policy scenario $\alpha=0.5$. Positive bars indicate that increasing a parameter raises the corresponding equilibrium quantity, while negative bars indicate the opposite. The figure shows that spread-side parameters dominate virality and toxicity, whereas pressure-side parameters matter most for user retention, which is important for interpreting which levers are empirically identified and which levers drive the health tradeoff.}
@@ -597,6 +590,7 @@ The structural insight from the analysis is that spread-side and pressure-side p
 % ============================================================
 %  7. DATA AND CALIBRATION
 % ============================================================
+\newpage
 \section{Data and calibration}
 \label{sec:data}
 
@@ -651,7 +645,7 @@ The spread calibration diagnostics from the current implementation are:
 
 The full-window $R^2 = 0.92$ indicates that the reduced IVF helper model explains over 92\% of the variance in the normalized retweet series. The spike-window $R^2 = 0.89$ shows that the model captures the main burst well but not perfectly, which is expected given the deterministic approximation to an inherently stochastic cascade.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_calibration_diagnostics.png}
 \caption{Calibration evidence for the main 100-hour Higgs retweet window. Panels~(a) and~(b) show observed hourly retweets, the fitted IVF curve, and a bootstrap fit band over the spike and over the full window; panel~(c) compares the selected reply-based toxicity proxy with alternative same-dataset proxy constructions; panel~(d) shows residual structure across time. The figure is intentionally honest about the tail mismatch: the spike is fitted tightly, while the later tail is harder because the deterministic helper compresses a noisier and lower-volume phase of the cascade. This matters because it separates what is strongly identified, namely the spread-side shape, from what is only approximate in the late decay.}
@@ -672,7 +666,7 @@ The narrow intervals confirm that the spread parameters are practically identifi
 
 \paragraph{Profile likelihood.} We compute local profile-likelihood curves by fixing one parameter at a grid of values near its optimum and re-optimizing the remaining parameters. Both $\beta_0$ and $\gamma_0$ show clear, well-defined minima (Figure~\ref{fig:profile}), confirming practical identifiability.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/profile_likelihood.png}
 \caption{Profile likelihood curves for the fitted spread parameters $\beta_0$ and $\gamma_0$ on the Higgs calibration window. Each panel fixes one parameter over a grid and re-optimizes the remaining parameters, so the minimum indicates how sharply the data select the fitted value. The clear local minima support practical identifiability of the spread block, which matters because the threshold calculation depends directly on these two parameters.}
@@ -685,7 +679,7 @@ To verify that the lifecycle structure in the IVFS model is empirically justifie
 
 Just as important is what the benchmark cannot test. A classical SIR model has no state corresponding to latent toxicity and no user-retention block, so it cannot address the main policy question of this report. It can only ask whether a three-state epidemic curve can mimic the Higgs spike. The benchmark therefore validates the spread-side shape advantage of IVF over SIR, while the full IVFS model is needed for the toxicity and platform-health tradeoff itself.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/benchmark_curve_compare.png}
 \caption{Benchmark comparison between the reduced IVF helper model and a classical three-parameter SIR alternative on the same Higgs retweet window. The left panel compares the empirical spike to both fitted curves, while the two right panels show toxicity and user-retention trajectories that only the IVFS framework can represent. The key takeaway is twofold: IVF fits the observed spike shape better than SIR, and the real scientific gain of IVFS is that it carries the calibration into a toxicity-retention tradeoff that SIR cannot test.}
@@ -707,7 +701,7 @@ We construct a proxy family and select the best-supported target:
 \end{itemize}
 The RE proxy is the clear winner in terms of fit quality, and it is also the most directly interpretable.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{assets/tau_proxy_comparison.png}
 \caption{Toxicity-calibration evidence from Higgs replies and the external Jigsaw reference. Panel~(a) compares the selected reply-based proxy with the baseline, decay-anchored, unconstrained, and reference-constrained toxicity trajectories; panel~(b) compares the resulting long-run equilibrium toxicity levels under the three policy scenarios. The figure matters because it shows both the empirical support for the RE proxy and the remaining identification gap in the pressure block.}
@@ -734,7 +728,7 @@ with proxy-fit $R^2 \approx 0.41$.
 
 Table~\ref{tab:tauconfigs} compares all pressure-block configurations.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Pressure-block configurations compared against the selected RE proxy.}
 \label{tab:tauconfigs}
@@ -761,6 +755,7 @@ We also checked whether the spread-side conclusions are sensitive to the exact c
 % ============================================================
 %  8. NUMERICAL RESULTS
 % ============================================================
+\newpage
 \section{Numerical results}
 \label{sec:results}
 
@@ -775,7 +770,7 @@ We compare three amplification scenarios that represent different platform polic
 
 Table~\ref{tab:scenarios} reports the long-run equilibrium values under each scenario with the baseline pressure parameters.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Long-run equilibrium values under the three policy scenarios (baseline pressure block).}
 \label{tab:scenarios}
@@ -811,7 +806,7 @@ Figure~\ref{fig:results} shows the results of a continuation sweep over $\alpha 
     \item The engagement measure $E^* = \alpha V^* U^*$ increases with $\alpha$ in the tested range, meaning that higher amplification does produce more total engagement, but at the cost of a smaller, more pressured user base.
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_results.png}
 \caption{Main policy evidence from the IVFS model. The top row shows time trajectories for viral volume, latent toxicity, and retained users under the health-first, moderate, and engagement-first scenarios; the bottom row shows how equilibrium toxicity, retained users, and engagement change as amplification $\alpha$ varies continuously. The dashed threshold line at $\alpha_{\mathrm{crit}} \approx 0.3165$ and the shaded subcritical region make the central tradeoff visually obvious: stronger amplification raises sustained virality and toxicity while reducing the long-run user base.}
@@ -824,7 +819,7 @@ We perform a local sensitivity sweep over the pressure forcing parameter $\phi$ 
 
 Figure~\ref{fig:phisens} shows the results. Across the entire tested range of $\phi$, the ordering of the three scenarios is preserved: the engagement-first scenario always produces the highest long-run pressure, the moderate scenario remains in the middle, and the health-first scenario stays at zero pressure because it is subcritical. The baseline value $\phi = 0.056$ and the external-reference value $\phi \approx 0.146$ are both within the range where the qualitative conclusions hold.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/phi_sensitivity.png}
 \caption{Robustness of the policy ordering to the toxicity forcing parameter $\phi$ with $\psi=0.1$ fixed. The left panel tracks equilibrium toxicity and the right panel tracks equilibrium users across a range of $\phi$ values, with vertical markers for the baseline and external-reference scales. The qualitative ranking of the three policies does not change, which matters because the pressure block is only partially identified and the main policy conclusion should not depend on one single choice of $\phi$.}
@@ -838,7 +833,7 @@ Because the pressure parameters are only partially identified, it matters that t
 
 Because the Higgs record spans only 168 hours, independent 100-hour windows are not available. To assess whether the spread model generalizes beyond the main calibration window, we refit the reduced IVF helper model on three representative 48-hour active windows from the same record. Note that these windows overlap substantially (e.g., windows~2 and~3 share hours 120 to 151, a 32-hour overlap), so the refits are not independent; the purpose is to test whether the model shape fits different phases of the cascade, not to provide independent replication.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Active-window validation for the reduced IVF helper model.}
 \label{tab:windowval}
@@ -855,7 +850,7 @@ Window (hours) & Peak RT count & Local fit $R^2$ & Interpretation \\
 
 The local $R^2$ values range from $0.69$ to $0.95$, which shows that the burst-and-decay shape captured by the IVF helper model is a consistent feature of the cascade across different phases. The fitted parameters do shift across windows, which is expected: different phases of the cascade have different intensity and duration. The correct interpretation is local phenomenological robustness: the model shape works across multiple active phases, rather than globally constant parameters.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/higgs_window_validation.png}
 \caption{Representative 48-hour active-window refits drawn from different phases of the Higgs cascade. Each panel shows observed retweet counts and the locally fitted IVF curve for one active window. The takeaway is not that the parameters are identical across windows, they are not, but that the same burst-and-decay mechanism continues to fit the event at its native one-hour scale, which strengthens the empirical case that the main calibration is not a one-window accident.}
@@ -867,6 +862,7 @@ The policy story emerging from these results is consistent across all tested pre
 % ============================================================
 %  9. LIMITATIONS
 % ============================================================
+\newpage
 \section{Limitations}
 \label{sec:limitations}
 
@@ -888,6 +884,7 @@ Despite these limitations, the model robustly supports the existence of a sharp 
 % ============================================================
 %  10. CONTRIBUTIONS OF EACH GROUP MEMBER
 % ============================================================
+\newpage
 \section{Contributions of each group member}
 \label{sec:contributions}
 
@@ -899,6 +896,7 @@ Despite these limitations, the model robustly supports the existence of a sharp 
 % ============================================================
 %  11. CONCLUSION AND NEXT STEPS
 % ============================================================
+\newpage
 \section{Conclusion}
 \label{sec:conclusion}
 
@@ -951,6 +949,7 @@ Some directions for future work:
 % ============================================================
 %  APPENDICES
 % ============================================================
+\newpage
 \appendix
 
 \section{Reproducibility notes}
