@@ -11,7 +11,7 @@ from .ivfs_calibration import (FIT_WINDOW_HOURS, bootstrap_calibration, bootstra
                                build_hourly_curve, ensure_dataset, fit_basic_ivf,
                                parse_activity_file, profile_likelihood)
 from .ivfs_config import (DELTA, DIAG_FIGURE_PATH, FIGURE_PATH, LAMBDA_U, MU_C,
-                          NU, PHI, PHI_SENS_FIGURE_PATH, PROFILE_FIGURE_PATH, PSI, RHO,
+                          NU, PHI, PHI_SENS_FIGURE_PATH, PSI, RHO,
                           ROBUST_BIN_HOURS, ROBUST_WINDOW_HOURS, SPIKE_WINDOW_HOURS,
                           TAIL_START_HOURS, TAU_COMPARE_FIGURE_PATH)
 from .ivfs_dynamics import (build_tau_configurations, find_W_for_interior_Emax, run_continuation,
