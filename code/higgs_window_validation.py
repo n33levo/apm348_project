@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 
 from .common import ASSETS_DIR, add_dataset_cli_arguments
 from .ivfs_calibration import ensure_dataset, fit_basic_ivf, parse_activity_file
-from .plot_style import (FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR, OBSERVED_MARKER_SIZE,
-                         SUPTITLE_FONT_SIZE, add_shared_legend, add_top_padding,
+from .plot_style import (FIT_COLOR, OBSERVED_COLOR, add_shared_legend, add_top_padding,
                          apply_plot_style, finish_axes)
 
 WINDOW_WIDTH = 48
