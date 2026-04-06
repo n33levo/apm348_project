@@ -410,7 +410,51 @@ This threshold divides the amplification parameter space into two regimes:
     \item $\alpha > \alpha_{\mathrm{crit}}$: the DFE is unstable. For the calibrated parameter set analyzed below, a unique positive equilibrium with $V^* > 0$ and $\tau^* > 0$ also exists.
 \end{itemize}
 
-This $\mathcal{R}_0$ comes from linearizing the $\dot{V}$ equation at the DFE. A full next-generation matrix derivation would strengthen this result; we discuss this as a future extension in Section~\ref{sec:nextsteps}.
+This $\mathcal{R}_0$ comes from linearizing the $\dot{V}$ equation at the DFE. We now confirm it using the next-generation matrix (NGM) method of van~den~Driessche and Watmough~\cite{vandenDriessche2002}.
+
+\begin{proposition}[NGM derivation of $\mathcal{R}_0$]
+\label{prop:ngm}
+The basic reproduction number obtained from the next-generation matrix framework of \cite{vandenDriessche2002} agrees with the linearization result~\eqref{eq:R0}.
+\end{proposition}
+
+\begin{proof}
+We follow the notation and hypotheses of \cite{vandenDriessche2002}. Label the state vector $x = (U, I, S, F, \tau, V)$. The set of disease-free states is $X_s = \{x \geq 0 \mid V = 0\}$. The only infected compartment is $V$ ($m = 1$): all other state variables are positive or zero at the DFE independently of the disease, and $I$ is \emph{not} infected because $I_{\mathrm{DFE}} > 0$.
+
+For the infected compartment, the $\dot{V}$ equation decomposes as
+\[
+\dot{V} = \underbrace{\beta_{\mathrm{eff}}\,I\,V}_{\mathcal{F}(x)}
+       \;-\; \underbrace{(\gamma_{\mathrm{eff}} + \mu_c)\,V}_{\mathcal{V}(x)},
+\]
+where $\mathcal{F}$ is the rate of new infections and $\mathcal{V} = \mathcal{V}^{-} - \mathcal{V}^{+}$ accounts for all other transfers. Since every inflow to $V$ is through the mass-action infection term, $\mathcal{V}^{+} = 0$ and $\mathcal{V} = \mathcal{V}^{-} = (\gamma_{\mathrm{eff}} + \mu_c)V$.
+
+We verify the five hypotheses (A1)--(A5) of \cite{vandenDriessche2002}:
+\begin{itemize}[leftmargin=1.5em]
+    \item $\mathcal{F}(x) \geq 0$ and $\mathcal{V}^{-}(x) \geq 0$ for all $x \geq 0$, since all parameters and state variables are nonnegative (Proposition~\ref{prop:nonneg}).
+    \item When $V = 0$: $\mathcal{V}^{-}(x) = 0$ and $\mathcal{F}(x) = 0$.
+    \item When $\mathcal{F}(x) = 0$ (i.e.\ $V = 0$), the remaining system reduces to the disease-free subsystem. Its Jacobian at the DFE has eigenvalues
+    \[
+    -(\delta + \mu_c),\; -\mu_c,\; -\mu_c,\; -\psi,\; -\lambda_u,
+    \]
+    all strictly negative.
+\end{itemize}
+
+Since $m = 1$, the next-generation matrices $\mathbf{F}$ and $\mathbf{V}$ are scalars:
+\[
+\mathbf{F} = \frac{\partial \mathcal{F}}{\partial V}\bigg|_{\mathrm{DFE}}
+           = \beta_{\mathrm{eff}}\,I\big|_{\mathrm{DFE}}
+           = \alpha\,\beta_0\,I_{\mathrm{DFE}},
+\qquad
+\mathbf{V} = \frac{\partial \mathcal{V}}{\partial V}\bigg|_{\mathrm{DFE}}
+           = \gamma_{\mathrm{eff}} + \mu_c\big|_{\mathrm{DFE}}
+           = \gamma_0 + \mu_c,
+\]
+where we used $\tau = 0$ at the DFE so that $\beta_{\mathrm{eff}} = \alpha\beta_0$ and $\gamma_{\mathrm{eff}} = \gamma_0$. The spectral radius of the next-generation matrix $\mathbf{F}\mathbf{V}^{-1}$ is therefore
+\[
+\mathcal{R}_0 = \sigma(\mathbf{F}\mathbf{V}^{-1})
+             = \frac{\alpha\,\beta_0\,I_{\mathrm{DFE}}}{\gamma_0 + \mu_c},
+\]
+which is exactly~\eqref{eq:R0}. By \cite[Theorem~2]{vandenDriessche2002}, the DFE is locally asymptotically stable when $\mathcal{R}_0 < 1$ and unstable when $\mathcal{R}_0 > 1$.
+\end{proof}
 
 The mechanism the model proposes is a nonlinear amplification-pressure feedback loop: platform amplification $\alpha$ converts ignored content to viral, viral content builds latent discussion pressure, and that pressure boosts further spread while eroding the user base. Whether this feedback self-sustains depends entirely on whether $\alpha$ exceeds $\alpha_{\mathrm{crit}}$.
 
@@ -969,7 +1013,7 @@ The spread model is fitted on a single event cascade (Higgs boson announcement, 
 Three structural simplifications bound the model's scope. First, homogeneous mixing: all content items in a compartment interact identically, ignoring network topology, community structure, and content heterogeneity. Second, deterministic dynamics: the model cannot capture stochastic fluctuations or rare-event behaviour inherent in individual sharing decisions. Third, scalar pressure: the latent state $\tau$ collapses the multidimensional nature of online toxicity (hate speech, harassment, misinformation) into a single index; a richer model might track multiple pressure types separately.
 
 \paragraph{External validity limitations.}
-The rage-bait operational definition (high $\tau/V$ ratio for $V>0$, Section~\ref{sec:ragebait-def}) remains a model-internal structural indicator rather than a validated external label. Future work should test whether this structural signature coincides with content independently labelled as inflammatory (e.g.\ using Jigsaw or Ruddit labels). Similarly, the DFE-based $\mathcal{R}_0$ derivation uses linearization of the $\dot{V}$ equation; a full next-generation matrix treatment would confirm the result and clarify the roles of individual model components.
+The rage-bait operational definition (high $\tau/V$ ratio for $V>0$, Section~\ref{sec:ragebait-def}) remains a model-internal structural indicator rather than a validated external label. Future work should test whether this structural signature coincides with content independently labelled as inflammatory (e.g.\ using Jigsaw or Ruddit labels).
 
 Despite these limitations, the calibrated model supports the existence of a sharp amplification threshold and a monotone amplification-retention tradeoff. What it cannot yet establish is whether the specific threshold value $\alpha_{\mathrm{crit}} \approx 0.3165$ or the magnitude of the retention loss carry over across platforms, content types, or event scales.
 
@@ -1215,8 +1259,6 @@ This alignment between model state and platform observables makes the threshold 
 Some directions for future work:
 
 \begin{enumerate}[leftmargin=1.5em]
-    \item \textbf{Next-generation matrix for $\mathcal{R}_0$.} The current threshold is derived from DFE linearization of the $\dot{V}$ equation. A full next-generation matrix derivation would provide a more rigorous foundation and clarify the roles of the different model components in the reproduction number.
-
     \item \textbf{Global stability.} We have established local stability of both the DFE (Proposition~\ref{prop:dfe}) and the positive equilibrium (numerically). Global stability results (for example, using Lyapunov functions) would strengthen the analytical foundation.
 
     \item \textbf{Hopf bifurcation.} Proposition~\ref{prop:forward} establishes a forward transcritical bifurcation for the calibrated parameter set near $\alpha_{\mathrm{crit}}$. We have not, however, ruled out Hopf bifurcations at extreme parameter values, which would produce oscillatory dynamics rather than convergence to a steady state.
@@ -1235,7 +1277,7 @@ Some directions for future work:
 
 \textbf{Neel Sarkar} was responsible for the mathematical formulation of the IVFS model, the implementation of all calibration, simulation, and analysis code, the equilibrium and stability analysis, the sensitivity computations, the benchmark comparisons, and the writing of this report. Neel also answered all questions during the class presentation (Q1--Q14 above).
 
-\textbf{Piper Scott} contributed to the initial problem formulation and motivation, assisted with literature review, helped select and interpret the Higgs dataset, and reviewed drafts of the report.
+\textbf{Piper Scott} contributed to the initial problem formulation and motivation, assisted with literature review, helped select and interpret the Higgs dataset, carried out the next-generation matrix derivation of $\mathcal{R}_0$ (Proposition~\ref{prop:ngm}), and reviewed drafts of the report.
 
 
 % ============================================================
@@ -1275,7 +1317,6 @@ The empirical package identifies different parts of the model with different str
 
 Natural extensions of the present framework include:
 \begin{enumerate}[leftmargin=1.5em]
-    \item A full next-generation matrix derivation of $\mathcal{R}_0$.
     \item Theorem-level local and global stability results using Lyapunov methods.
     \item A multi-timescale or state-dependent pressure model.
     \item A latent observation model for $\tau$ with RE and MT as noisy observables.
@@ -1356,6 +1397,11 @@ In \textit{Proc.\ WWW Companion}, 2019.
 C.~Castillo-Chavez and B.~Song.
 Dynamical models of tuberculosis and their applications.
 \textit{Mathematical Biosciences and Engineering}, 1(2):361--404, 2004.
+
+\bibitem{vandenDriessche2002}
+P.~van~den~Driessche and J.~Watmough.
+Reproduction numbers and sub-threshold endemic equilibria for compartmental models of disease transmission.
+\textit{Mathematical Biosciences}, 180(1--2):29--48, 2002.
 
 \end{thebibliography}
 \endgroup
