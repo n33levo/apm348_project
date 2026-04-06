@@ -11,10 +11,7 @@ from .ivfs_config import (FIT_WINDOW_HOURS,
                           SCENARIO_DISPLAY_HOURS, SOLVER_ATOL, SOLVER_MAX_STEP,
                           SOLVER_METHOD, SOLVER_RTOL, SPIKE_WINDOW_HOURS)
 from .ivfs_dynamics import run_scenarios
-from .plot_style import (FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR, OBSERVED_MARKER_SIZE,
-                         REFERENCE_COLOR, SCENARIO_COLORS, SMOOTH_COLOR, SUPTITLE_FONT_SIZE,
-                         add_metric_box, add_shared_legend, add_top_padding, apply_plot_style,
-                         finish_axes)
+from .plot_style import (apply_plot_style)
 
 import matplotlib
 
