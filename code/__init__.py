@@ -1,1 +1,1 @@
-"""IVFS project package."""
+"""IVFS project package"""
