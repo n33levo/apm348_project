@@ -49,11 +49,7 @@ If the Higgs file is not in the default data directory, pass `--dataset-path /pa
   - refits the reduced IVF model on alternate active Higgs windows
   - checks whether the spread fit is stable away from the main 100 hour window
 
-- `code/equilibrium_analysis.py`
-  - computes disease free and positive equilibria
-  - checks local stability numerically
-
-- `code/heatmap_figures.py`, `code/extra_figures.py`, `code/model_structure_figure.py`
+- `code/ivfs_figures.py`, `code/extra_figures.py`, `code/model_structure_figure.py`
   - generate supplementary figures used in the report
   - reuse the same fitted parameters and solver settings as the main pipeline
 
@@ -86,7 +82,6 @@ Figures and run metadata are written to `assets/`, including:
 - throughout the project, `tau` represents latent rage-bait toxicity, namely reply-driven discussion pressure and its feedback into spread and user attrition
 - Jigsaw toxicity refers only to an external text label scale, not to the state variable itself
 - the ODE integration uses explicit `solve_ivp` settings recorded in metadata files
-- the detailed project direction is documented in `purpose.md` and `nextplans.md`
 
 ## Tests
 
