@@ -6,7 +6,7 @@ from .common import solve_trajectory
 from .ivfs_calibration import fit_tau_proxy, fit_tau_proxy_reference_constrained, simulate_tau_from_v, tau_fit_metrics
 from .ivfs_config import (DELTA, ETA, KAPPA, LAMBDA_U, MU_C, NU, PHI, PSI, RHO,
                           SCENARIO_ALPHAS, SOLVER_ATOL, SOLVER_MAX_STEP,
-                          SOLVER_METHOD, SOLVER_RTOL, TAU_PARAM_BOUNDS, W)
+                          SOLVER_METHOD, SOLVER_RTOL, W)
 
 
 def _ivfs_rhs(t, y, alpha, beta0, gamma0,
