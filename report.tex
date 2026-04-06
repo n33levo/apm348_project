@@ -590,7 +590,7 @@ The structural insight from the analysis is that spread-side and pressure-side p
 % ============================================================
 %  7. DATA AND CALIBRATION
 % ============================================================
-\newpage
+\clearpage
 \section{Data and calibration}
 \label{sec:data}
 
@@ -862,7 +862,7 @@ The policy story emerging from these results is consistent across all tested pre
 % ============================================================
 %  9. LIMITATIONS
 % ============================================================
-\newpage
+\clearpage
 \section{Limitations}
 \label{sec:limitations}
 
@@ -882,19 +882,211 @@ Despite these limitations, the model robustly supports the existence of a sharp 
 
 
 % ============================================================
-%  10. CONTRIBUTIONS OF EACH GROUP MEMBER
+%  10. QUESTIONS FROM THE PRESENTATION
 % ============================================================
 \newpage
-\section{Contributions of each group member}
-\label{sec:contributions}
+\section{Questions from the presentation}
+\label{sec:questions}
 
-\textbf{Neel Sarkar} was responsible for the mathematical formulation of the IVFS model, the implementation of all calibration, simulation, and analysis code, the equilibrium and stability analysis, the sensitivity computations, the benchmark comparisons, and the writing of this report.
+This section records questions raised during the class presentation and provides answers grounded in the model, calibration, and analysis developed in this report. All questions were answered during the presentation by Neel Sarkar.
 
-\textbf{Piper Scott} contributed to the initial problem formulation and motivation, assisted with literature review, helped select and interpret the Higgs dataset, and reviewed drafts of the report.
+\bigskip
+
+\noindent\textbf{Q1.} \textit{Given the importance of $\alpha$ (the platform amplification strength), how do you propose determining this parameter methodologically from input data? What characteristics of the social media platform, dominant user pool, or the content itself do you think are most relevant?}
+
+\medskip
+\noindent\textbf{A1.}
+In our framework $\alpha \in [0,1]$ is a \emph{scenario} parameter, not a calibrated one: we study the system across the full amplification range rather than pinning down a single empirical value (Table~\ref{tab:params}).
+Determining $\alpha$ from data would require access to internal platform recommendation metrics, specifically the fraction of content impressions attributable to algorithmic promotion versus organic (chronological or follower-based) reach.
+The most relevant platform characteristics are the engagement signals the ranking algorithm optimises (clicks, reshares, dwell time), the ratio of algorithmically recommended impressions to chronologically sorted impressions, and any editorial or policy constraints the platform places on amplification.
+User-pool characteristics such as average session length and propensity to reshare would also affect how strongly a given $\alpha$ translates into viral conversion, since these factors are folded into the base spread rate $\beta_0$ in our model.
+In practice, $\alpha$ is best understood as a platform-level control knob: our contribution is not to estimate it but to show that the system's qualitative behaviour, including the threshold at $\alpha_{\mathrm{crit}} \approx 0.3165$, changes sharply as $\alpha$ varies.
+
+\bigskip
+
+\noindent\textbf{Q2.} \textit{What are the critical assumptions of the compartmental / epidemiological model used in your work that may prevent the practical use or realism of your model?}
+
+\medskip
+\noindent\textbf{A2.}
+The assumptions are listed explicitly in Section~\ref{sec:assumptions}. The ones most likely to limit practical realism are:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Homogeneous mixing.} All content items in a compartment are treated identically, ignoring network topology and community structure. Real platforms have clustered communities where content spreads locally before crossing network boundaries.
+  \item \textbf{Deterministic dynamics.} The model tracks mean trajectories and cannot capture stochastic fluctuations, rare super-spreading events, or the randomness inherent in individual sharing decisions.
+  \item \textbf{Scalar pressure.} All forms of harmful discussion (hate speech, harassment, heated debate) are collapsed into a single latent variable $\tau$. A more realistic model might distinguish multiple pressure types with different feedback strengths.
+  \item \textbf{Aggregate user pool.} The single variable $U$ does not resolve user heterogeneity, meaning the model cannot distinguish between highly engaged power users and casual browsers who may respond very differently to toxicity.
+  \item \textbf{Single-cascade calibration.} The spread parameters are fitted on one event from one platform. Generalisation to other topics, time periods, or platforms is untested.
+\end{enumerate}
+These assumptions are deliberate tradeoffs between granularity and identifiability (Section~\ref{sec:assumptions}): they keep the system tractable and calibratable with publicly available aggregate data, at the cost of resolution on micro-level effects.
+
+\bigskip
+
+\noindent\textbf{Q3.} \textit{How do you distinguish between different web content types: ignored, virally reshared, and suppressed?}
+
+\medskip
+\noindent\textbf{A3.}
+The compartments $I$, $V$, $F$, $S$ are lifecycle stages, not content-topic categories.
+Content enters the system in the ignored state $I$ (posted but not yet amplified).
+The transition $I \to V$ occurs through the mass-action term $\beta_{\mathrm{eff}}\,I\,V$: ignored content becomes viral when it interacts with already-viral content in the presence of algorithmic amplification (the factor $\alpha$ in $\beta_{\mathrm{eff}}$).
+Viral content fatigues ($V \to F$) at rate $\gamma_{\mathrm{eff}}\,V$ as engagement momentum decays.
+Content is suppressed ($I \to S$) by platform moderation at rate $\delta\,I$.
+In the empirical calibration, the viral compartment $V$ is proxied by normalised hourly retweet counts from the Higgs dataset, and the discussion-pressure variable $\tau$ is proxied by reply counts.
+The model does not classify individual posts by topic; it classifies the aggregate content mass by its position in the visibility lifecycle.
+
+\bigskip
+
+\noindent\textbf{Q4.} \textit{What limitations do you think your model has?}
+
+\medskip
+\noindent\textbf{A4.}
+The full discussion is in Section~\ref{sec:limitations}. In summary:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Identification.} The spread block is well-identified (bootstrap CI on $\alpha_{\mathrm{crit}}$ spans $[0.313,\,0.320]$), but the pressure parameters $(\phi,\psi)$ are only partially identified: the ratio $\phi/\psi$ is anchored by the external Jigsaw reference, while the individual values cannot be separately pinned down without independent text-toxicity data.
+  \item \textbf{Data.} The model is calibrated on a single 100-hour event cascade from Twitter in 2012. Multi-cascade, multi-platform validation is needed.
+  \item \textbf{Structural.} Homogeneous mixing, deterministic flows, scalar pressure, and an aggregate user pool are all simplifications. Each trades micro-level realism for macro-level tractability.
+  \item \textbf{External validity.} The operational definition of rage-bait (elevated $\tau/V$ ratio) has not been validated against ground-truth text-toxicity annotations on the same dataset.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Q6.} \textit{Is there any way to capture the nature of different social media platforms (e.g., responses to ragebait, tolerance to toxicity)?}
+
+\medskip
+\noindent\textbf{A6.}
+Yes, the model already encodes platform-specific behaviour through several parameters.
+The amplification parameter $\alpha$ captures how aggressively the platform's algorithm promotes engaging content: a platform that prioritises engagement would have high $\alpha$, while one that limits algorithmic amplification would have low $\alpha$.
+The moderation rate $\delta$ captures how quickly the platform removes or de-ranks content.
+Tolerance to toxicity is captured by $w$ (the weight of pressure on user attrition): a platform whose users are more tolerant of heated discussion would have a lower $w$, meaning a given level of $\tau$ causes less user departure.
+Different platforms would therefore correspond to different $(\alpha, \delta, w)$ triples.
+However, the current calibration is specific to Twitter during the Higgs event, so the parameter values themselves would need to be re-estimated for each platform. Cross-platform calibration is a natural direction for future work (Section~\ref{sec:nextsteps}).
+
+\bigskip
+
+\noindent\textbf{Q7.} \textit{In the rage-bait scenario, based on social media recommendation systems, content would spread to a target population and then reduce recommendation until the target audience all received the message\,. So target population should also be included as a factor in the model?}
+
+\medskip
+\noindent\textbf{A7.}
+The model captures a finite-audience effect implicitly through two mechanisms.
+First, the mass-action conversion term $\beta_{\mathrm{eff}}\,I\,V$ depends on the product of ignored and viral content: as content goes viral and the ignored pool $I$ is depleted, the rate of new viral conversion slows, which is analogous to susceptible depletion in an SIR model.
+Second, the user pool $U$ shrinks under toxicity pressure (Eq.~\ref{eq:U}), which reduces content creation via the saturating term $\rho U/(1+U)$, further limiting the available audience.
+What the model does \emph{not} have is an explicit ``reached audience'' compartment that would track how many users have already seen a particular piece of content.
+Adding such a compartment (for example, splitting $U$ into ``not yet exposed'' and ``already exposed'' sub-pools) would allow direct modelling of the recommendation saturation effect described in the question. This is a plausible extension, though it would add parameters that require per-user exposure data to identify.
+
+\bigskip
+
+\noindent\textbf{Q8.} \textit{Is the assumption of average users implicitly? Will people from different regions or groups behave differently?}
+
+\medskip
+\noindent\textbf{A8.}
+Yes, the model assumes a single homogeneous user pool $U$ with uniform attrition sensitivity (Section~\ref{sec:assumptions}, Assumption~5).
+In reality, users from different regions, age groups, or interest communities differ in their exposure to content, their engagement patterns, and their sensitivity to toxicity.
+Incorporating this heterogeneity would require stratifying $U$ into multiple sub-pools $U_1, U_2, \ldots$ with group-specific attrition rates $\lambda_{u,i}$ and toxicity sensitivities $w_i$, or adopting a network-aware formulation with degree-dependent transmission rates.
+Each additional user group adds parameters that need empirical grounding, which the aggregate-level Higgs dataset cannot provide.
+The aggregate approach is therefore a deliberate choice matched to the resolution of the available data: it captures the \emph{directional} retention cost of amplification (more pressure $\Rightarrow$ fewer users) without claiming to resolve which sub-populations are most affected.
+
+\bigskip
+
+\noindent\textbf{Q9.} \textit{Could introducing stochastic shocks or time-varying parameters better capture sudden viral bursts or platform interventions?}
+
+\medskip
+\noindent\textbf{A9.}
+Yes, and both are listed as future directions (Section~\ref{sec:nextsteps}).
+A stochastic differential equation (SDE) version of the model, adding Wiener-process noise to the $\dot{V}$ and $\dot{\tau}$ equations, would capture random fluctuations and rare super-spreading events that the deterministic model smooths over.
+Time-varying parameters would allow modelling of platform interventions that change the amplification policy mid-cascade: for example, $\alpha(t)$ could step down at a known intervention time, and the model would predict how the system relaxes to a new equilibrium.
+The current deterministic, constant-parameter model is appropriate for studying the \emph{mean} cascade shape and the equilibrium structure, which is what the threshold and policy-comparison results require.
+Adding stochasticity or time dependence would increase realism but also increase the number of parameters that need to be identified, and the analytical results (DFE stability, threshold formula, sensitivity indices) would need to be replaced by their stochastic or non-autonomous counterparts.
+
+\bigskip
+
+\noindent\textbf{Q10.} \textit{You seem to define toxicity as the quantity of comments on a post: how do you measure positive or constructive conversation?}
+
+\medskip
+\noindent\textbf{A10.}
+The model does not distinguish between constructive and toxic conversation.
+The latent variable $\tau$ represents aggregate reply-driven discussion pressure, proxied empirically by hourly reply volume from the Higgs dataset (Section~\ref{sec:proxy}).
+High reply volume is interpreted as elevated discussion pressure regardless of whether the replies are constructive, neutral, or hostile.
+This is a known limitation: the Higgs dataset contains only interaction metadata (timestamps and event types), not tweet text, so per-message sentiment or toxicity classification is not possible within the same dataset.
+The external Jigsaw text-toxicity reference \cite{borkan2019} is used only to anchor the \emph{scale} of $\tau$, not to classify individual messages.
+Separating constructive from toxic conversation within the model would require either a dataset that includes both interaction metadata and text-level toxicity labels, or a multi-dimensional pressure state that tracks positive and negative engagement separately. This is a natural extension but is beyond what the current data can support.
+
+\bigskip
+
+\noindent\textbf{Q11.} \textit{How did you calculate that $\alpha_{\mathrm{crit}} \approx 0.3165$? What would it mean for there to be a bifurcation in $\alpha$?}
+
+\medskip
+\noindent\textbf{A11.}
+The critical value is computed analytically.
+We linearise the $\dot{V}$ equation around the disease-free equilibrium (DFE) and define the basic reproduction number $\mathcal{R}_0 = \alpha\,\beta_0\,I_{\mathrm{DFE}} / (\gamma_0 + \mu_c)$ (Eq.~\ref{eq:R0}).
+Setting $\mathcal{R}_0 = 1$ and solving for $\alpha$ gives
+\[
+\alpha_{\mathrm{crit}} = \frac{\gamma_0 + \mu_c}{\beta_0 \cdot I_{\mathrm{DFE}}}.
+\]
+With calibrated values $\beta_0 \approx 1.0001$, $\gamma_0 \approx 0.3003$, $\mu_c = 0.01$, and $I_{\mathrm{DFE}} \approx 0.9804$, this evaluates to $\alpha_{\mathrm{crit}} \approx 0.3165$ (Eq.~\ref{eq:alpha_crit}).
+
+The bifurcation is \emph{transcritical} (Section~\ref{sec:analysis}, Proposition~\ref{prop:dfe}).
+Below $\alpha_{\mathrm{crit}}$, the only nonneg\-ative equilibrium is the DFE with $V^* = \tau^* = 0$: viral content cannot sustain itself, and the platform retains its full user base $U^* = \nu/\lambda_u = 50$.
+As $\alpha$ crosses $\alpha_{\mathrm{crit}}$ from below, a positive equilibrium with $V^* > 0$ and $\tau^* > 0$ bifurcates continuously from the DFE and becomes stable, while the DFE becomes unstable.
+In practical terms, the bifurcation means the platform ``switches on'' a self-sustaining cycle of viral spread and discussion pressure once amplification exceeds the critical level.
+The transition is sharp: Figure~\ref{fig:bifurcation} shows the onset of $V^*$ at the threshold.
+
+\bigskip
+
+\noindent\textbf{Q12.} \textit{How would you recommend moderation be enforced to reduce rage bait and toxicity? How do non-toxic factors like bots affect the critical threshold?}
+
+\medskip
+\noindent\textbf{A12.}
+The model suggests two complementary moderation strategies.
+First, \emph{reduce $\alpha$ below $\alpha_{\mathrm{crit}}$}: if the platform dials amplification below the critical level, the DFE is stable and sustained virality collapses entirely. This is the cleanest intervention because it eliminates the feedback loop at its source.
+Second, \emph{increase the moderation rate $\delta$}: diverting more content from $I$ to $S$ before it goes viral lowers the DFE value of $I_{\mathrm{DFE}}$ (Eq.~\ref{eq:dfe}), which raises $\alpha_{\mathrm{crit}}$. In other words, more aggressive content moderation makes it harder for the self-sustaining viral cycle to start.
+
+Bots would affect the model primarily by inflating the effective content creation rate (increasing $\rho$) and potentially amplifying the $I \to V$ transition by generating artificial engagement.
+A higher $\rho$ increases $I_{\mathrm{DFE}}$ (more ignored content available for viral conversion), which \emph{lowers} $\alpha_{\mathrm{crit}}$ and makes self-sustaining virality easier to trigger.
+Bot mitigation could therefore be modelled as reducing $\rho$ (less spam content entering the system) or increasing $\delta$ (faster removal of bot-generated content), both of which raise $\alpha_{\mathrm{crit}}$ and make the platform safer.
+
+\bigskip
+
+\noindent\textbf{Q13.} \textit{Does a user's algorithm affect how prone they are to seeing certain types of content? For example, one user might see more extreme content than another, how does your model account for personalization algorithms that change audience exposure?}
+
+\medskip
+\noindent\textbf{A13.}
+The model does not account for personalization.
+The amplification parameter $\alpha$ represents an \emph{average platform-level} amplification strength, not a per-user quantity.
+Under homogeneous mixing (Assumption~3, Section~\ref{sec:assumptions}), all content items in a compartment interact with the full user pool identically.
+In reality, personalization algorithms create heterogeneous exposure: some users are shown more extreme or engaging content than others, depending on their interaction history.
+Capturing this would require either a user-stratified model (multiple user pools with different effective $\alpha_i$ values) or a network-aware formulation where each node has its own exposure distribution.
+This is an important limitation: personalization can concentrate toxicity exposure on a subset of users, amplifying the retention cost for that subset while leaving others unaffected. The aggregate model detects the average directional effect (more amplification $\Rightarrow$ lower retention) but cannot resolve which users bear the cost.
+
+\bigskip
+
+\noindent\textbf{Q14.} \textit{The definitions of ``toxicity'' and ``rage-baiting'' can be subjective, how does your model account for this? Who determines what content is toxic or rage bait?}
+
+\medskip
+\noindent\textbf{A14.}
+The model avoids subjective content labelling by using an \emph{operational} definition of rage-bait (Section~\ref{sec:ragebait-def}).
+Content is rage-bait whenever the ratio of discussion pressure to viral volume ($\tau/V$) is elevated, regardless of the topic's political valence, emotional register, or perceived offensiveness.
+This is a structural definition based on observable interaction patterns: high reply activity relative to passive resharing, not a human editorial judgement.
+The latent variable $\tau$ is not a text-toxicity classifier score; it is a behavioural aggregate inferred from reply volume.
+No individual or committee determines what is ``toxic'' within the model. The model instead asks: does the \emph{interaction pattern} look like high-arousal discussion pressure?
+The Jigsaw dataset \cite{borkan2019}, which does use human-annotated text-level toxicity labels, is used only as an external scale reference to calibrate the magnitude of $\tau$, not to classify any content in the Higgs dataset.
+The subjectivity concern is valid in general, but in our framework it is side-stepped by defining toxicity through behavioural proxies rather than content labels.
+
+\bigskip
+
+\noindent\textbf{Q15.} \textit{Could this model be applied to other types of content that produce less intense emotional responses?}
+
+\medskip
+\noindent\textbf{A15.}
+Yes.
+The IVFS compartmental structure (ignored $\to$ viral $\to$ fatigued $\to$ suppressed) describes a \emph{content lifecycle} that is not specific to rage-bait or high-arousal content.
+Any content type that exhibits burst-and-decay dynamics, including news, entertainment, scientific announcements, or memes, could in principle be modelled with the same framework.
+For less emotionally intense content, the pressure parameters would change: lower $\phi$ (less viral-to-pressure forcing), lower $w$ (weaker effect of pressure on user departure), and possibly higher $\psi$ (faster pressure relaxation).
+The threshold structure ($\alpha_{\mathrm{crit}}$) and the amplification--retention tradeoff would still apply, but the quantitative values would differ.
+The key requirement is a dataset with observable spread activity (retweets or shares) and engagement activity (replies or comments) for calibration.
+The Higgs boson cascade used in this report is itself an example of scientific content rather than politically provocative content, yet it exhibits the structural signature (elevated $\tau/V$ ratio) that the model is designed to capture (Section~\ref{sec:ragebait-def}).
+This supports the claim that the framework generalises beyond narrowly defined ``rage-bait'' to any content that provokes disproportionate discussion relative to its resharing volume.
 
 
 % ============================================================
-%  11. CONCLUSION AND NEXT STEPS
+%  CONCLUSION AND NEXT STEPS
 % ============================================================
 \newpage
 \section{Conclusion}
@@ -944,6 +1136,13 @@ Some directions for future work:
 
     \item \textbf{Network-aware extension.} Incorporating network structure (e.g., through degree-dependent transmission rates) would relax the homogeneous mixing assumption and allow the model to capture community-level dynamics.
 \end{enumerate}
+
+\subsection{Contributions of each group member}
+\label{sec:contributions}
+
+\textbf{Neel Sarkar} was responsible for the mathematical formulation of the IVFS model, the implementation of all calibration, simulation, and analysis code, the equilibrium and stability analysis, the sensitivity computations, the benchmark comparisons, and the writing of this report. Neel also answered all questions during the class presentation (Q1--Q15 above).
+
+\textbf{Piper Scott} contributed to the initial problem formulation and motivation, assisted with literature review, helped select and interpret the Higgs dataset, and reviewed drafts of the report.
 
 
 % ============================================================
