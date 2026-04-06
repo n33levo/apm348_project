@@ -16,8 +16,7 @@ from .equilibrium_analysis import positive_equilibrium
 from .ivfs_calibration import ensure_dataset, parse_activity_file
 from .ivfs_config import DELTA, FITTED_BETA0, FITTED_GAMMA0, LAMBDA_U, MU_C, NU, RHO, SMOOTH_WINDOW
 from .ivfs_dynamics import run_sensitivity
-from .plot_style import (ENGAGEMENT_COLOR, FIT_COLOR, LEGEND_FONT_SIZE, OBSERVED_COLOR,
-                         PRESSURE_COLOR, REFERENCE_COLOR, SCENARIO_COLORS, SUPTITLE_FONT_SIZE,
+from .plot_style import (ENGAGEMENT_COLOR, FIT_COLOR, PRESSURE_COLOR, REFERENCE_COLOR, SUPTITLE_FONT_SIZE,
                          THRESHOLD_COLOR, USER_COLOR, add_threshold_shading,
                          add_top_padding, apply_plot_style, finish_axes)
 
