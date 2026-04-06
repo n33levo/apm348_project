@@ -2,7 +2,7 @@
 
 ## Setup
 
-Create a virtual environment, install the requirements, and run the scripts from the repo root.
+To create a virtual environment, install the requirements, and run the scripts from the repo root.
 
 ```bash
 python -m venv .venv

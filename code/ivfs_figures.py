@@ -140,7 +140,7 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
         axs[1, 0].set_xlim(0, zoom_end)
         axs[1, 0].set_ylim(bottom=0)
         add_top_padding(axs[1, 0], fraction=0.34, keep_bottom=0.0)
-        axs[1, 0].set_title('(c) Same-dataset toxicity proxy evidence')
+        axs[1, 0].set_title('(c) Same-dataset pressure proxy evidence')
         finish_axes(axs[1, 0], 'Hours since calibration window start', 'Normalized proxy level')
         re_total = int(np.sum(re_window))
         add_metric_box(
@@ -158,7 +158,7 @@ def make_calibration_figure(empirical_norm, fitted_norm, window_counts,
     else:
         axs[1, 0].text(0.5, 0.5, 'No RE data available', transform=axs[1, 0].transAxes,
                        ha='center', va='center', fontsize=12, color='gray')
-        axs[1, 0].set_title('(c) Reply-driven toxicity proxy')
+        axs[1, 0].set_title('(c) Reply-driven pressure proxy')
 
     residuals = fitted_norm - empirical_norm
     bar_colors = [FIT_COLOR if r > 0 else '#1565C0' for r in residuals]

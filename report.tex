@@ -147,7 +147,7 @@ Addai et al.\ \cite{addai2025} & Users & Toxicity labels & No & Simulated \\
 \end{tabular}
 \end{table}
 
-The main difference is the content centric perspective. Since we track content through lifecycle stages rather than users through behavioural stages, the state variables correspond directly to observable platform quantities (content volumes, reply rates, active user counts) rather than latent user states that would need to be inferred. Our toxicity variable $\tau$ is driven by reply volume, the same behavioural signal the Higgs dataset provides, rather than by text level toxicity labels.
+The main difference is the content centric perspective. Since we track content through lifecycle stages rather than users through behavioural stages, the state variables correspond directly to observable platform quantities (content volumes, reply rates, active user counts) rather than latent user states that would need to be inferred. Our discussion-pressure variable $\tau$ is driven by reply volume, the same behavioural signal the Higgs dataset provides, rather than by text level toxicity labels.
 
 
 % ============================================================
@@ -741,7 +741,7 @@ The full-window $R^2 = 0.92$ and spike-window $R^2 = 0.89$ indicate that the red
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{assets/apm348_calibration_diagnostics.png}
-\caption{Calibration evidence for the main 100-hour Higgs retweet window. Panels~(a) and~(b) show observed hourly retweets, the fitted IVF curve, and a bootstrap fit band over the spike and over the full window; panel~(c) compares the selected reply-based toxicity proxy with alternative same-dataset proxy constructions; panel~(d) shows residual structure across time. The figure is intentionally honest about the tail mismatch: the spike is fitted tightly, while the later tail is harder because the deterministic helper compresses a noisier and lower-volume phase of the cascade. This matters because it separates what is strongly identified, namely the spread-side shape, from what is only approximate in the late decay.}
+\caption{Calibration evidence for the main 100-hour Higgs retweet window. Panels~(a) and~(b) show observed hourly retweets, the fitted IVF curve, and a bootstrap fit band over the spike and over the full window; panel~(c) compares the selected reply-based pressure proxy with alternative same-dataset proxy constructions; panel~(d) shows residual structure across time. The figure is intentionally honest about the tail mismatch: the spike is fitted tightly, while the later tail is harder because the deterministic helper compresses a noisier and lower-volume phase of the cascade. This matters because it separates what is strongly identified, namely the spread-side shape, from what is only approximate in the late decay.}
 \label{fig:cal}
 \end{figure}
 

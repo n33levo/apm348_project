@@ -76,7 +76,7 @@ def make_higgs_overview():
     axs[1].fill_between(hrs, re_s, alpha=0.35, color=PRESSURE_COLOR)
     axs[1].plot(hrs, re_s, color=PRESSURE_COLOR, linewidth=1.6)
     axs[1].set_ylabel('Replies / hour')
-    axs[1].set_title('(b) Reply Activity (Proxy for Toxicity)')
+    axs[1].set_title('(b) Reply Activity (Proxy for Discussion Pressure)')
     add_top_padding(axs[1], fraction=0.12, keep_bottom=0.0)
 
     axs[2].fill_between(hrs, mt_s, alpha=0.35, color=USER_COLOR)
